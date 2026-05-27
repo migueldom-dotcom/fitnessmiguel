@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rutina 4 Días — Masa + Rodillas</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a; --surface: #111111; --border: #1e1e1e;
+    --accent: #c8f135; --text: #e8e8e8; --muted: #555;
+    --d1: #c8f135; --d2: #ff6b35; --d3: #38bdf8; --d4: #a78bfa;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; padding-bottom:80px; }
+
+  header { padding:52px 24px 36px; border-bottom:1px solid var(--border); position:relative; overflow:hidden; }
+  header::after { content:'MASA'; position:absolute; right:-10px; top:10px; font-family:'Bebas Neue',sans-serif; font-size:130px; color:rgba(255,255,255,0.025); pointer-events:none; letter-spacing:-4px; }
+  .label { font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+  h1 { font-family:'Bebas Neue',sans-serif; font-size:clamp(58px,14vw,100px); line-height:0.88; }
+  h1 em { color:var(--accent); font-style:normal; }
+  .meta { display:flex; gap:10px; flex-wrap:wrap; margin-top:22px; }
+  .badge { font-size:11px; letter-spacing:0.1em; text-transform:uppercase; padding:5px 13px; border:1px solid var(--border); border-radius:20px; color:var(--muted); }
+  .badge.on { border-color:var(--accent); color:var(--accent); }
+  .note { margin:28px 24px 0; padding:16px 20px; background:rgba(200,241,53,0.04); border-left:3px solid var(--accent); border-radius:0 6px 6px 0; font-size:13px; line-height:1.65; color:#999; }
+  .note strong { color:var(--accent); }
+
+  .week { margin:32px 24px 0; display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .week-day { padding:14px 12px; border:1px solid var(--border); border-radius:10px; text-align:center; }
+  .week-day .wd-label { font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+  .week-day .wd-name { font-family:'Bebas Neue',sans-serif; font-size:15px; letter-spacing:0.06em; line-height:1.2; }
+  .week-day.c1 { border-color:rgba(200,241,53,0.25); } .week-day.c1 .wd-name { color:var(--d1); }
+  .week-day.c2 { border-color:rgba(255,107,53,0.25); } .week-day.c2 .wd-name { color:var(--d2); }
+  .week-day.c3 { border-color:rgba(56,189,248,0.25); } .week-day.c3 .wd-name { color:var(--d3); }
+  .week-day.c4 { border-color:rgba(167,139,250,0.25); } .week-day.c4 .wd-name { color:var(--d4); }
+
+  .days { padding:32px 24px 0; display:flex; flex-direction:column; gap:28px; }
+  .card { border:1px solid var(--border); border-radius:14px; overflow:hidden; background:var(--surface); }
+  .card.c1 { border-color:rgba(200,241,53,0.18); } .card.c2 { border-color:rgba(255,107,53,0.18); }
+  .card.c3 { border-color:rgba(56,189,248,0.18); } .card.c4 { border-color:rgba(167,139,250,0.18); }
+
+  .card-header { padding:22px 24px 18px; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; justify-content:space-between; }
+  .day-tag { font-family:'Bebas Neue',sans-serif; font-size:12px; letter-spacing:0.14em; padding:5px 13px; border-radius:20px; margin-bottom:10px; display:inline-block; }
+  .c1 .day-tag { background:rgba(200,241,53,0.1); color:var(--d1); } .c2 .day-tag { background:rgba(255,107,53,0.1); color:var(--d2); }
+  .c3 .day-tag { background:rgba(56,189,248,0.1); color:var(--d3); } .c4 .day-tag { background:rgba(167,139,250,0.1); color:var(--d4); }
+  .card-title { font-size:18px; font-weight:500; line-height:1.2; }
+  .card-sub { font-size:12px; color:var(--muted); margin-top:3px; }
+  .big-num { font-family:'Bebas Neue',sans-serif; font-size:72px; line-height:1; opacity:0.08; letter-spacing:-3px; }
+  .c1 .big-num { color:var(--d1); } .c2 .big-num { color:var(--d2); } .c3 .big-num { color:var(--d3); } .c4 .big-num { color:var(--d4); }
+
+  .timing { display:flex; border-bottom:1px solid var(--border); }
+  .t-block { flex:1; padding:10px 0; text-align:center; border-right:1px solid var(--border); }
+  .t-block:last-child { border-right:none; }
+  .t-val { font-family:'Bebas Neue',sans-serif; font-size:22px; display:block; }
+  .t-lbl { font-size:10px; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; }
+
+  .phase { padding:18px 24px; border-bottom:1px solid var(--border); }
+  .phase:last-child { border-bottom:none; }
+  .phase-label { font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); margin-bottom:14px; }
+  .exlist { display:flex; flex-direction:column; gap:14px; }
+
+  /* Exercise row: name+detail | sets | weight | check */
+  .ex {
+    display:grid;
+    grid-template-columns: 1fr auto auto auto;
+    align-items:center;
+    gap:10px;
+  }
+  .ex-info { min-width:0; }
+  .ex-name { font-size:14px; font-weight:500; line-height:1.3; }
+  .ex-name a { color:inherit; text-decoration:none; border-bottom:1px dashed rgba(255,255,255,0.18); padding-bottom:1px; transition:color 0.2s, border-color 0.2s; }
+  .ex-name a:hover { color:var(--accent); border-color:var(--accent); }
+  .ex-detail { font-size:11px; color:var(--muted); margin-top:3px; line-height:1.4; font-style:italic; }
+
+  .sets { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:0.04em; white-space:nowrap; text-align:right; }
+  .c1 .sets { color:var(--d1); } .c2 .sets { color:var(--d2); } .c3 .sets { color:var(--d3); } .c4 .sets { color:var(--d4); }
+
+  .weight-input {
+    width: 58px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 5px 7px;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .weight-input::placeholder { color: var(--muted); font-size:11px; }
+  .weight-input:focus { border-color: rgba(255,255,255,0.25); }
+  .c1 .weight-input:focus { border-color: var(--d1); }
+  .c2 .weight-input:focus { border-color: var(--d2); }
+  .c3 .weight-input:focus { border-color: var(--d3); }
+  .c4 .weight-input:focus { border-color: var(--d4); }
+
+  /* Checkmark */
+  .check-btn {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    display: flex; align-items:center; justify-content:center;
+    transition: all 0.18s ease;
+    flex-shrink: 0;
+  }
+  .check-btn svg { width:14px; height:14px; stroke: var(--muted); stroke-width:2.5; fill:none; transition: stroke 0.18s; }
+  .check-btn.done { border-color: var(--accent); background: rgba(200,241,53,0.12); }
+  .check-btn.done svg { stroke: var(--accent); }
+  .c2 .check-btn.done { border-color: var(--d2); background: rgba(255,107,53,0.12); }
+  .c2 .check-btn.done svg { stroke: var(--d2); }
+  .c3 .check-btn.done { border-color: var(--d3); background: rgba(56,189,248,0.12); }
+  .c3 .check-btn.done svg { stroke: var(--d3); }
+  .c4 .check-btn.done { border-color: var(--d4); background: rgba(167,139,250,0.12); }
+  .c4 .check-btn.done svg { stroke: var(--d4); }
+
+  .knee { display:inline-block; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; padding:2px 7px; border-radius:10px; background:rgba(56,189,248,0.1); color:#38bdf8; margin-left:6px; vertical-align:middle; font-style:normal; }
+  .ss-wrap { border-left:2px solid var(--border); padding-left:14px; margin-left:2px; }
+  .ss-label { font-size:10px; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:10px; }
+
+  .principles { margin:32px 24px 0; padding:24px; background:var(--surface); border:1px solid var(--border); border-radius:14px; }
+  .principles h3 { font-family:'Bebas Neue',sans-serif; font-size:24px; letter-spacing:0.05em; margin-bottom:18px; }
+  .principles ul { list-style:none; display:flex; flex-direction:column; gap:11px; }
+  .principles li { font-size:13px; color:#999; line-height:1.55; padding-left:18px; position:relative; }
+  .principles li::before { content:'→'; position:absolute; left:0; color:var(--accent); }
+  .principles li strong { color:var(--text); }
+</style>
+</head>
+<body>
+
+<script>
+  function toggle(btn) {
+    btn.classList.toggle('done');
+  }
+</script>
+
+<header>
+  <div class="label">Programa de entrenamiento · 4 días/semana</div>
+  <h1>MASA +<br><em>RODILLAS</em></h1>
+  <div class="meta">
+    <span class="badge on">Hipertrofia</span>
+    <span class="badge">Push / Pull / Legs</span>
+    <span class="badge">60 min</span>
+    <span class="badge">Rehab activa</span>
+    <span class="badge">4 días</span>
+  </div>
+  <div class="note">
+    <strong>Lógica del programa:</strong> Push/Pull separados = más volumen por grupo upper con mejor recuperación. 2 días de piernas con protocolo de rodilla integrado. El excéntrico lento es obligatorio en todos los ejercicios. <strong>Toca el nombre</strong> para ver el video. Registra el peso usado y marca el check al completar.
+  </div>
+</header>
+
+<div class="week">
+  <div class="week-day c1"><div class="wd-label">Lunes</div><div class="wd-name">Piernas<br>Quad</div></div>
+  <div class="week-day c2"><div class="wd-label">Miércoles</div><div class="wd-name">Upper<br>Push</div></div>
+  <div class="week-day c3"><div class="wd-label">Viernes</div><div class="wd-name">Piernas<br>Posterior</div></div>
+  <div class="week-day c4"><div class="wd-label">Sábado</div><div class="wd-name">Upper<br>Pull</div></div>
+</div>
+
+<div class="days">
+
+  <!-- DÍA 1 -->
+  <div class="card c1">
+    <div class="card-header">
+      <div>
+        <div class="day-tag">Día 1 · Lunes</div>
+        <div class="card-title">Piernas — Quad Dominante</div>
+        <div class="card-sub">+ Protocolo rodilla integrado</div>
+      </div>
+      <div class="big-num">1</div>
+    </div>
+    <div class="timing">
+      <div class="t-block"><span class="t-val">10'</span><span class="t-lbl">Rehab</span></div>
+      <div class="t-block"><span class="t-val">45'</span><span class="t-lbl">Trabajo</span></div>
+      <div class="t-block"><span class="t-val">5'</span><span class="t-lbl">Movilidad</span></div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">Protocolo rodilla · 10 min — No saltar</div>
+      <div class="exlist">
+        <div class="ex">
+          <div class="ex-info">
+            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=wall+sit+isometric+quad+knee+rehab+how+to" target="_blank">Isométrico de cuádriceps en pared</a> <span class="knee">rodilla</span></div>
+            <div class="ex-detail">45° de flexión · mantener sin temblar · sin dolor agudo</div>
+          </div>
+          <div class="sets">3×45s</div>
+          <input class="weight-input" type="text" placeholder="kg / lb">
+          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+        </div>
+        <div class="ex">
+          <div class="ex-info">
+            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=eccentric+step+down+exercise+knee+rehab+how+to" target="_blank">Step-down excéntrico en cajón</a> <span class="knee">rodilla</span></div>
+            <div class="ex-detail">Descenso en 4 seg · control total · 5–10 cm de altura</div>
+          </div>
+          <div class="sets">2×10</div>
+          <input class="weight-input" type="text" placeholder="kg / lb">
+          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">Bloque A — Fuerza base · 22 min</div>
+      <div class="exlist">
+        <div class="ex">
+          <div class="ex-info">
+            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=goblet+squat+pause+how+to+form" target="_blank">Sentadilla goblet con pausa</a></div>
+            <div class="ex-detail">Pausa 2 seg abajo · 2 series de activación, luego trabajo</div>
+          </div>
+          <div class="sets">4×8</div>
+          <input class="weight-input" type="text" placeholder="kg / lb">
+          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+        </div>
+        <div class="ex">
+          <div class="ex-info">
+            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=leg+press+45+high+foot+placement+form+how+to" target="_blank">Prensa 45° — rango controlado</a> <span class="knee">rodilla</span></div>
+            <div class="ex-detail">Pies altos y anchos · rodilla nunca pasa 90° · excéntrico 3 seg</div>
+          </div>
+          <div class="sets">4×10</div>
+          <input class="weight-input" type="text" placeholder="kg / lb">
+          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">Bloque B — Volumen · 18 min</div>
+      <div class="ss-wrap">
+        <div class="ss-label">Superset × 3 rondas · descanso 90s</div>
+        <div class="exlist">
+          <div class="ex">
+            <div class="ex-info">
+              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=leg+extension+machine+short+range+quad+how+to" target="_blank">Extensión de cuádriceps (rango corto)</a> <span class="knee">rodilla</span></div>
+              <div class="ex-detail">Solo 0–60° · nunca extensión completa · carga moderada</div>
+            </div>
+            <div class="sets">3×12</div>
+            <input class="weight-input" type="text" placeholder="kg / lb">
+            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+          </div>
+          <div class="ex">
+            <div class="ex-info">
+              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=reverse+lunge+dumbbell+how+to+form" target="_blank">Zancada reversa con mancuernas</a></div>
+              <div class="ex-detail">Paso largo atrás · menos torque patelar que zancada forward</div>
+            </div>
+            <div class="sets">3×10/l</div>
+            <input class="weight-input" type="text" placeholder="kg / lb">
+            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">Movilidad final · 5 min</div>
+      <div class="exlist">
+        <div class="ex">
+          <div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=kneeling+hip+flexor+stretch+how+to" target="_blank">Estiramiento flexores de cadera en lunge</a></div></div>
+          <div class="sets">2×40s</div>
+          <input class="weight-input" type="text" placeholder="—" disabled style="opacity:0.3">
+          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+        </div>
+        <div class="ex">
+          <div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=ankle+mobility+wall+drill+dorsiflexion+how+to" target="_blank">Movilidad de tobillo en pared</a></div></div>
+          <div class="sets">2×30s</div>
+          <input class="weight-input" type="text" placeholder="—" disabled style="opacity:0.3">
+          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DÍA 2 -->
+  <div class="card c2">
+    <div class="card-header">
+      <div>
+        <div class="day-tag">Día 2 · Miércoles</div>
+        <div class="card-title">Upper — Push</div>
+        <div class="card-sub">Pecho · Hombros · Tríceps</div>
+      </div>
+      <div class="big-num">2</div>
+    </div>
+    <div class="timing">
+      <div class="t-block"><span class="t-val">5'</span><span class="t-lbl">Activación</span></div>
+      <div class="t-block"><span class="t-val">50'</span><span class="t-lbl">Trabajo</span></div>
+      <div class="t-block"><span class="t-val">5'</span><span class="t-lbl">Movilidad</span></div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">Bloque A — Pecho · 20 min</div>
+      <div class="ss-wrap">
+        <div class="ss-label">Superset × 4 rondas · descanso 90s</div>
+        <div class="exlist">
+          <div class="ex">
+            <div class="ex-info">
+              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=incline+barbell+bench+press+proper+form+how+to" target="_blank">Press de banca inclinado con barra</a></div>
+              <div class="ex-detail">Inclinación 30–45° · escápulas retraídas · excéntrico 3 seg</div>
+            </div>
+            <div class="sets">4×8</div>
+            <input class="weight-input" type="text" placeholder="kg / lb">
+            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+          </div>
+          <div class="ex">
+            <div class="ex-info">
+              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=dumbbell+chest+fly+flat+bench+how+to+form" target="_blank">Aperturas con mancuernas en banco plano</a></div>
+              <div class="ex-detail">Arco suave en codos · estiramiento completo abajo</div>
+            </div>
+            <div class="sets">4×12</div>
+            <input class="weight-input" type="text" placeholder="kg / lb">
+            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">Bloque B — Hombros · 20 min</div>
+      <div class="ss-wrap">
+        <div class="ss-label">Superset × 3 rondas · descanso 90s</div>
+        <div class="exlist">
+          <div class="ex">
+            <div class="ex-info">
+              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=seated+dumbbell+shoulder+press+how+to+form" target="_blank">Press militar con mancuernas sentado</a></div>
+              <div class="ex-detail">Codos ligeramente adelantados · sin hiperextender lumbar</div>
+            </div>
+            <div class="sets">3×10</div>
+            <input class="weight-input" type="text" placeholder="kg / lb">
+            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+          </div>
+          <div class="ex">
+            <div class="ex-info">
+              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=dumbbell+lateral+raise+side+delts+how+to+form" target="_blank">Elevaciones laterales con mancuernas</a></div>
+              <div class="ex-detail">Codo ligeramente doblado · no subir más del hombro</div>
+            </div>
+            <div class="sets">3×15</div>
+            <input class="weight-input" type="text" placeholder="kg / lb">
+            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">Bloque C — Tríceps · 10 min</div>
+      <div class="ss-wrap">
+        <div class="ss-label">Superset × 3 rondas · descanso 60s</div>
+        <div class="exlist">
+          <div class="ex">
+            <div class="ex-info">
+              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=tricep+rope+pushdown+cable+how+to+form" target="_blank">Extensión de tríceps en polea (rope)</a></div>
+              <div class="ex-detail">Codos pegados al cuerpo · extensión completa abajo</div>
+            </div>
+            <div class="sets">3×12</div>
+            <input class="weight-input" type="text" placeholder="kg / lb">
+            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+          </div>
+          <div class="ex">
+            <div class="ex-info">
+              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=bench+dips+triceps+how+to+form" target="_blank">Fondos en banco (Dips en banco)</a></div>
+              <div class="ex-detail">Cuerpo pegado al banco · no bajar más de 90°</div>
+            </div>
+            <div class="sets">3×12</div>
+            <input class="weight-input" type="text" placeholder="kg / lb">
+            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">Movilidad final · 5 min</div>
+      <div class="exlist">
+        <div class="ex">
+          <div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=chest+doorway+stretch+pectoral+how+to" target="_blank">Estiramiento de pectoral en marco de puerta</a></div></div>
+          <div class="sets">2×40s</div>
+          <input class="weight-input" type="text" placeholder="—" disabled style="opacity:0.3">
+          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+        </div>
+        <div class="ex">
+          <div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=thoracic+spine+rotation+floor+mobility+how+to" target="_blank">Rotación torácica en el suelo</a></div></div>
+          <div class="sets">2×30s</div>
+          <input class="weight-input" type="text" placeholder="—" disabled style="opacity:0.3">
+          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DÍA 3 -->
+  <div class="card c3">
+    <div class="card-header">
+      <div>
+        <div class="day-tag">Día 3 · Viernes</div>
+        <div class="card-title">Piernas — Posterior Dominante</div>
+        <div class="card-sub">+ Protocolo rodilla integrado</div>
+      </div>
+      <div class="big-num">3</div>
+    </div>
+    <div class="timing">
+      <div class="t-block"><span class="t-val">10'</span><span class="t-lbl">Rehab</span></div>
+      <div class="t-block"><span class="t-val">45'</span><span class="t-lbl">Trabajo</span></div>
+      <div class="t-block"><span class="t-val">5'</span><span class="t-lbl">Movilidad</span></div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">Protocolo rodilla · 10 min — No saltar</div>
+      <div class="exlist">
+        <div class="ex">
+          <div class="ex-info">
+            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=wall+sit+isometric+quad+knee+rehab+how+to" target="_blank">Isométrico de cuádriceps en pared</a> <span class="knee">rodilla</span></div>
+            <div class="ex-detail">Aumentar ángulo semana a semana · nunca con dolor</div>
+          </div>
+          <div class="sets">3×60s</div>
+          <input class="weight-input" type="text" placeholder="—" disabled style="opacity:0.3">
+          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+        </div>
+        <div class="ex">
+          <div class="ex-info">
+            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=eccentric+step+up+single+leg+slow+lowering+knee+how+to" target="_blank">Step-up excéntrico en cajón</a> <span class="knee">rodilla</span></div>
+            <div class="ex-detail">Subir con dos piernas · bajar lento 4 seg con una sola</div>
+          </div>
+          <div class="sets">2×8/l</div>
+          <input class="weight-input" type="text" placeholder="kg / lb">
+          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">Bloque A — Hip hinge fuerza · 25 min</div>
+      <div class="exlist">
+        <div class="ex">
+          <div class="ex-info">
+            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=romanian+deadlift+RDL+proper+form+how+to" target="_blank">Peso muerto rumano (RDL)</a></div>
+            <div class="ex-detail">Isquiotibiales al máximo · rodilla suave · espalda neutra</div>
+          </div>
+          <div class="sets">4×8</div>
+          <input class="weight-input" type="text" placeholder="kg / lb">
+          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+        </div>
+        <div class="ex">
+          <div class="ex-info">
+            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=barbell+hip+thrust+bench+proper+form+how+to" target="_blank">Hip thrust con barra en banco</a></div>
+            <div class="ex-detail">Pausa 2 seg arriba · glúteo contraído · sin hiperextensión lumbar</div>
+          </div>
+          <div class="sets">4×10</div>
+          <input class="weight-input" type="text" placeholder="kg / lb">
+          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">Bloque B — Volumen posterior + estabilidad · 18 min</div>
+      <div class="ss-wrap">
+        <div class="ss-label">Superset × 3 rondas · descanso 90s</div>
+        <div class="exlist">
+          <div class="ex">
+            <div class="ex-info">
+              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=lying+hamstring+curl+machine+eccentric+how+to+form" target="_blank">Curl de isquiotibiales en máquina</a></div>
+              <div class="ex-detail">Excéntrico 3 seg · protege rodilla · rango completo</div>
+            </div>
+            <div class="sets">3×12</div>
+            <input class="weight-input" type="text" placeholder="kg / lb">
+            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+          </div>
+          <div class="ex">
+            <div class="ex-info">
+              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=bulgarian+split+squat+dumbbell+proper+form+how+to" target="_blank">Sentadilla búlgara con mancuernas</a> <span class="knee">rodilla</span></div>
+              <div class="ex-detail">Pie trasero elevado · solo el rango sin dolor · alt: prensa unilateral</div>
+            </div>
+            <div class="sets">3×8/l</div>
+            <input class="weight-input" type="text" placeholder="kg / lb">
+            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">Movilidad final · 5 min</div>
+      <div class="exlist">
+        <div class="ex">
+          <div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=lying+hamstring+stretch+resistance+band+how+to" target="_blank">Estiramiento de isquiotibiales con banda</a></div></div>
+          <div class="sets">2×40s</div>
+          <input class="weight-input" type="text" placeholder="—" disabled style="opacity:0.3">
+          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+        </div>
+        <div class="ex">
+          <div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=foam+roller+quadriceps+IT+band+how+to+technique" target="_blank">Foam roll cuádriceps e IT band</a></div></div>
+          <div class="sets">90s/l</div>
+          <input class="weight-input" type="text" placeholder="—" disabled style="opacity:0.3">
+          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DÍA 4 -->
+  <div class="card c4">
+    <div class="card-header">
+      <div>
+        <div class="day-tag">Día 4 · Sábado</div>
+        <div class="card-title">Upper — Pull + Core</div>
+        <div class="card-sub">Espalda · Bíceps · Core</div>
+      </div>
+      <div class="big-num">4</div>
+    </div>
+    <div class="timing">
+      <div class="t-block"><span class="t-val">5'</span><span class="t-lbl">Activación</span></div>
+      <div class="t-block"><span class="t-val">45'</span><span class="t-lbl">Trabajo</span></div>
+      <div class="t-block"><span class="t-val">10'</span><span class="t-lbl">Core</span></div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">Bloque A — Espalda vertical + horizontal · 25 min</div>
+      <div class="ss-wrap">
+        <div class="ss-label">Superset × 4 rondas · descanso 90s</div>
+        <div class="exlist">
+          <div class="ex">
+            <div class="ex-info">
+              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=wide+grip+lat+pulldown+cable+proper+form+how+to" target="_blank">Jalón al pecho en polea (agarre ancho)</a></div>
+              <div class="ex-detail">Pecho fuera · escápulas hacia abajo al final del movimiento</div>
+            </div>
+            <div class="sets">4×10</div>
+            <input class="weight-input" type="text" placeholder="kg / lb">
+            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+          </div>
+          <div class="ex">
+            <div class="ex-info">
+              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=one+arm+dumbbell+row+proper+form+how+to" target="_blank">Remo con mancuerna a una mano</a></div>
+              <div class="ex-detail">Codo pegado al cuerpo · pausa arriba 1 seg · no rotar el torso</div>
+            </div>
+            <div class="sets">4×10/l</div>
+            <input class="weight-input" type="text" placeholder="kg / lb">
+            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">Bloque B — Espalda media + rear delt · 15 min</div>
+      <div class="ss-wrap">
+        <div class="ss-label">Superset × 3 rondas · descanso 90s</div>
+        <div class="exlist">
+          <div class="ex">
+            <div class="ex-info">
+              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=seated+cable+row+neutral+grip+proper+form+how+to" target="_blank">Remo en polea sentado (agarre neutro)</a></div>
+              <div class="ex-detail">Tira hacia ombligo · pecho estático · no balancear</div>
+            </div>
+            <div class="sets">3×12</div>
+            <input class="weight-input" type="text" placeholder="kg / lb">
+            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+          </div>
+          <div class="ex">
+            <div class="ex-info">
+              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=face+pull+cable+rope+rear+delt+how+to+form" target="_blank">Face pull en polea alta con cuerda</a></div>
+              <div class="ex-detail">Tira hacia la cara · codos arriba · salud del manguito rotador</div>
+            </div>
+            <div class="sets">3×15</div>
+            <input class="weight-input" type="text" placeholder="kg / lb">
+            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">Bloque C — Bíceps · 10 min</div>
+      <div class="ss-wrap">
+        <div class="ss-label">Superset × 3 rondas · descanso 60s</div>
+        <div class="exlist">
+          <div class="ex">
+            <div class="ex-info">
+              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=EZ+bar+curl+biceps+proper+form+how+to" target="_blank">Curl con barra EZ</a></div>
+              <div class="ex-detail">Codos fijos · excéntrico 3 seg · rango completo</div>
+            </div>
+            <div class="sets">3×10</div>
+            <input class="weight-input" type="text" placeholder="kg / lb">
+            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+          </div>
+          <div class="ex">
+            <div class="ex-info">
+              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=hammer+curl+dumbbell+alternating+how+to+form" target="_blank">Curl martillo con mancuernas alterno</a></div>
+              <div class="ex-detail">Trabaja braquial y braquiorradial además del bíceps</div>
+            </div>
+            <div class="sets">3×12</div>
+            <input class="weight-input" type="text" placeholder="kg / lb">
+            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-label">Core · 10 min</div>
+      <div class="exlist">
+        <div class="ex">
+          <div class="ex-info">
+            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=plank+exercise+proper+form+how+to" target="_blank">Plancha frontal</a></div>
+            <div class="ex-detail">Cuerpo recto · no hundir caderas · respiración controlada</div>
+          </div>
+          <div class="sets">3×45s</div>
+          <input class="weight-input" type="text" placeholder="—" disabled style="opacity:0.3">
+          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+        </div>
+        <div class="ex">
+          <div class="ex-info">
+            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=dead+bug+exercise+core+stability+how+to+form" target="_blank">Dead bug</a></div>
+            <div class="ex-detail">Espalda baja pegada al suelo · movimiento lento y controlado</div>
+          </div>
+          <div class="sets">3×10/l</div>
+          <input class="weight-input" type="text" placeholder="—" disabled style="opacity:0.3">
+          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+        </div>
+        <div class="ex">
+          <div class="ex-info">
+            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=pallof+press+cable+anti+rotation+core+how+to" target="_blank">Pallof press en polea</a></div>
+            <div class="ex-detail">Anti-rotación · core como estabilizador · no como motor</div>
+          </div>
+          <div class="sets">3×12/l</div>
+          <input class="weight-input" type="text" placeholder="kg / lb">
+          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="principles">
+  <h3>Principios del programa</h3>
+  <ul>
+    <li><strong>Excéntrico lento en todo:</strong> 3 seg en la bajada de cada ejercicio. La hipertrofia ocurre aquí. La rodilla se fortalece aquí.</li>
+    <li><strong>Isométricos de cuádriceps son terapéuticos:</strong> 4–6 semanas de consistencia reducen dolor patelar 40–50%. No son opcionales.</li>
+    <li><strong>Progresión del rango de rodilla:</strong> Semanas 1–2 rango corto. Semanas 3–4 ampliar solo si no hay dolor. Sin saltar fases.</li>
+    <li><strong>Sentadilla búlgara con precaución:</strong> Si genera dolor articular, sustituir por prensa unilateral. Sin negociación.</li>
+    <li><strong>Face pull cada semana:</strong> Equilibra el volumen de push. Protege el manguito rotador a largo plazo.</li>
+    <li><strong>Proteína ≥ 2g/kg de peso corporal:</strong> Sin esto ningún programa funciona. No hay atajos.</li>
+    <li><strong>48h mínimo entre días de piernas:</strong> Lunes y Viernes garantizan eso. Nunca mover a días consecutivos.</li>
+    <li><strong>Dolor articular = stop inmediato:</strong> Molestia muscular es normal. Dolor en la articulación: para, reduce rango o carga.</li>
+  </ul>
+</div>
+
+</body>
+</html>
