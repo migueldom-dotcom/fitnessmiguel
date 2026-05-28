@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rutina 4 Días — Masa + Rodillas</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --bg: #0a0a0a; --surface: #111111; --border: #1e1e1e;
@@ -12,129 +13,243 @@
     --d1: #c8f135; --d2: #ff6b35; --d3: #38bdf8; --d4: #a78bfa;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; padding-bottom:80px; }
+  body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; padding-bottom:120px; }
 
-  header { padding:52px 24px 36px; border-bottom:1px solid var(--border); position:relative; overflow:hidden; }
+  /* AUTH SCREEN */
+  #auth-screen {
+    position:fixed; inset:0; background:var(--bg);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    z-index:9999; padding:32px;
+  }
+  #auth-screen h2 { font-family:'Bebas Neue',sans-serif; font-size:48px; color:var(--text); margin-bottom:6px; }
+  #auth-screen h2 em { color:var(--accent); font-style:normal; }
+  #auth-screen p { font-size:13px; color:var(--muted); margin-bottom:32px; text-align:center; }
+  #google-btn {
+    display:flex; align-items:center; gap:12px;
+    background:#fff; color:#111; font-family:'DM Sans',sans-serif;
+    font-size:14px; font-weight:500; padding:13px 24px;
+    border:none; border-radius:12px; cursor:pointer;
+    transition:opacity 0.2s; width:100%; max-width:280px; justify-content:center;
+  }
+  #google-btn:hover { opacity:0.9; }
+  #google-btn svg { width:20px; height:20px; flex-shrink:0; }
+  #auth-error { color:#ff4d4d; font-size:12px; margin-top:16px; text-align:center; }
+
+  /* USER BAR */
+  #user-bar {
+    display:none; align-items:center; justify-content:space-between;
+    padding:10px 20px; background:var(--surface);
+    border-bottom:1px solid var(--border);
+    position:sticky; top:0; z-index:100;
+  }
+  #user-bar.visible { display:flex; }
+  .user-info { display:flex; align-items:center; gap:10px; }
+  #user-avatar { width:28px; height:28px; border-radius:50%; object-fit:cover; }
+  #user-name { font-size:13px; font-weight:500; }
+  #signout-btn { font-size:11px; color:var(--muted); background:none; border:1px solid var(--border); padding:4px 10px; border-radius:6px; cursor:pointer; transition:all 0.15s; }
+  #signout-btn:hover { color:var(--text); border-color:#444; }
+
+  /* SESSION INDICATOR */
+  #session-bar {
+    display:none; padding:8px 20px;
+    background:rgba(200,241,53,0.05);
+    border-bottom:1px solid rgba(200,241,53,0.1);
+    font-size:11px; color:#999;
+    align-items:center; justify-content:space-between;
+  }
+  #session-bar.visible { display:flex; }
+  #session-date { color:var(--accent); font-weight:500; }
+  #save-status { font-size:11px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+  .save-dot { width:6px; height:6px; border-radius:50%; background:var(--muted); }
+  .save-dot.saving { background:#f5c400; animation:pulse 1s infinite; }
+  .save-dot.saved { background:#4ade80; }
+  .save-dot.error { background:#ff4d4d; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* PROGRESS PANEL */
+  #progress-panel {
+    display:none; margin:16px 20px 0;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; overflow:hidden;
+  }
+  #progress-panel.visible { display:block; }
+  .progress-header { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .progress-header span { font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); }
+  #progress-toggle { background:none; border:none; color:var(--muted); font-size:18px; cursor:pointer; padding:0; line-height:1; }
+  #progress-body { padding:12px 16px; display:none; }
+  #progress-body.open { display:block; }
+  .prog-exercise { margin-bottom:12px; }
+  .prog-ex-name { font-size:12px; font-weight:500; margin-bottom:6px; }
+  .prog-bars { display:flex; flex-direction:column; gap:3px; }
+  .prog-bar-row { display:flex; align-items:center; gap:8px; font-size:11px; color:var(--muted); }
+  .prog-bar-wrap { flex:1; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+  .prog-bar-fill { height:100%; border-radius:2px; background:var(--accent); transition:width 0.4s ease; }
+  .prog-weight { min-width:50px; text-align:right; font-size:11px; }
+
+  /* HEADER */
+  header { padding:48px 20px 32px; border-bottom:1px solid var(--border); position:relative; overflow:hidden; }
   header::after { content:'MASA'; position:absolute; right:-10px; top:10px; font-family:'Bebas Neue',sans-serif; font-size:130px; color:rgba(255,255,255,0.025); pointer-events:none; letter-spacing:-4px; }
-  .label { font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
-  h1 { font-family:'Bebas Neue',sans-serif; font-size:clamp(58px,14vw,100px); line-height:0.88; }
+  .label { font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  h1 { font-family:'Bebas Neue',sans-serif; font-size:clamp(52px,13vw,90px); line-height:0.88; }
   h1 em { color:var(--accent); font-style:normal; }
-  .meta { display:flex; gap:10px; flex-wrap:wrap; margin-top:22px; }
-  .badge { font-size:11px; letter-spacing:0.1em; text-transform:uppercase; padding:5px 13px; border:1px solid var(--border); border-radius:20px; color:var(--muted); }
+  .meta { display:flex; gap:8px; flex-wrap:wrap; margin-top:18px; }
+  .badge { font-size:10px; letter-spacing:0.1em; text-transform:uppercase; padding:4px 11px; border:1px solid var(--border); border-radius:20px; color:var(--muted); }
   .badge.on { border-color:var(--accent); color:var(--accent); }
-  .note { margin:28px 24px 0; padding:16px 20px; background:rgba(200,241,53,0.04); border-left:3px solid var(--accent); border-radius:0 6px 6px 0; font-size:13px; line-height:1.65; color:#999; }
+  .note { margin:20px 20px 0; padding:14px 16px; background:rgba(200,241,53,0.04); border-left:3px solid var(--accent); border-radius:0 6px 6px 0; font-size:12px; line-height:1.6; color:#999; }
   .note strong { color:var(--accent); }
 
-  .week { margin:32px 24px 0; display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
-  .week-day { padding:14px 12px; border:1px solid var(--border); border-radius:10px; text-align:center; }
-  .week-day .wd-label { font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
-  .week-day .wd-name { font-family:'Bebas Neue',sans-serif; font-size:15px; letter-spacing:0.06em; line-height:1.2; }
+  /* GLOBAL UNIT BAR */
+  .global-unit-bar { margin:14px 20px 0; display:flex; align-items:center; gap:10px; }
+  .global-unit-label { font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); }
+  .unit-selector { display:inline-flex; border:1px solid var(--border); border-radius:7px; overflow:hidden; }
+  .unit-btn { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; padding:5px 12px; background:transparent; border:none; color:var(--muted); cursor:pointer; transition:all 0.15s; }
+  .unit-btn.active { background:rgba(200,241,53,0.12); color:var(--accent); }
+  .unit-btn + .unit-btn { border-left:1px solid var(--border); }
+
+  /* WEEK */
+  .week { margin:24px 20px 0; display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+  .week-day { padding:12px 8px; border:1px solid var(--border); border-radius:10px; text-align:center; cursor:pointer; transition:all 0.15s; }
+  .week-day:hover { border-color:#333; }
+  .week-day .wd-label { font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:5px; }
+  .week-day .wd-name { font-family:'Bebas Neue',sans-serif; font-size:13px; letter-spacing:0.06em; line-height:1.2; }
   .week-day.c1 { border-color:rgba(200,241,53,0.25); } .week-day.c1 .wd-name { color:var(--d1); }
   .week-day.c2 { border-color:rgba(255,107,53,0.25); } .week-day.c2 .wd-name { color:var(--d2); }
   .week-day.c3 { border-color:rgba(56,189,248,0.25); } .week-day.c3 .wd-name { color:var(--d3); }
   .week-day.c4 { border-color:rgba(167,139,250,0.25); } .week-day.c4 .wd-name { color:var(--d4); }
 
-  .days { padding:32px 24px 0; display:flex; flex-direction:column; gap:28px; }
+  /* CARDS */
+  .days { padding:24px 20px 0; display:flex; flex-direction:column; gap:24px; }
   .card { border:1px solid var(--border); border-radius:14px; overflow:hidden; background:var(--surface); }
   .card.c1 { border-color:rgba(200,241,53,0.18); } .card.c2 { border-color:rgba(255,107,53,0.18); }
   .card.c3 { border-color:rgba(56,189,248,0.18); } .card.c4 { border-color:rgba(167,139,250,0.18); }
-
-  .card-header { padding:22px 24px 18px; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; justify-content:space-between; }
-  .day-tag { font-family:'Bebas Neue',sans-serif; font-size:12px; letter-spacing:0.14em; padding:5px 13px; border-radius:20px; margin-bottom:10px; display:inline-block; }
+  .card-header { padding:18px 20px 14px; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; justify-content:space-between; }
+  .day-tag { font-family:'Bebas Neue',sans-serif; font-size:11px; letter-spacing:0.14em; padding:4px 12px; border-radius:20px; margin-bottom:8px; display:inline-block; }
   .c1 .day-tag { background:rgba(200,241,53,0.1); color:var(--d1); } .c2 .day-tag { background:rgba(255,107,53,0.1); color:var(--d2); }
   .c3 .day-tag { background:rgba(56,189,248,0.1); color:var(--d3); } .c4 .day-tag { background:rgba(167,139,250,0.1); color:var(--d4); }
-  .card-title { font-size:18px; font-weight:500; line-height:1.2; }
-  .card-sub { font-size:12px; color:var(--muted); margin-top:3px; }
-  .big-num { font-family:'Bebas Neue',sans-serif; font-size:72px; line-height:1; opacity:0.08; letter-spacing:-3px; }
+  .card-title { font-size:17px; font-weight:500; line-height:1.2; }
+  .card-sub { font-size:11px; color:var(--muted); margin-top:2px; }
+  .big-num { font-family:'Bebas Neue',sans-serif; font-size:64px; line-height:1; opacity:0.07; letter-spacing:-3px; flex-shrink:0; }
   .c1 .big-num { color:var(--d1); } .c2 .big-num { color:var(--d2); } .c3 .big-num { color:var(--d3); } .c4 .big-num { color:var(--d4); }
-
   .timing { display:flex; border-bottom:1px solid var(--border); }
-  .t-block { flex:1; padding:10px 0; text-align:center; border-right:1px solid var(--border); }
+  .t-block { flex:1; padding:9px 0; text-align:center; border-right:1px solid var(--border); }
   .t-block:last-child { border-right:none; }
-  .t-val { font-family:'Bebas Neue',sans-serif; font-size:22px; display:block; }
-  .t-lbl { font-size:10px; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; }
+  .t-val { font-family:'Bebas Neue',sans-serif; font-size:20px; display:block; }
+  .t-lbl { font-size:9px; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; }
 
-  .phase { padding:18px 24px; border-bottom:1px solid var(--border); }
+  /* PHASES */
+  .phase { padding:14px 20px; border-bottom:1px solid var(--border); }
   .phase:last-child { border-bottom:none; }
-  .phase-label { font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); margin-bottom:14px; }
+  .phase-label { font-size:9px; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+  .ss-wrap { border-left:2px solid var(--border); padding-left:12px; margin-left:2px; }
+  .ss-label { font-size:9px; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:10px; }
+
+  /* EXERCISES */
   .exlist { display:flex; flex-direction:column; gap:14px; }
+  .ex { display:flex; flex-direction:column; gap:6px; }
+  .ex-row1 { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+  .ex-info { flex:1; min-width:0; }
+  .ex-name { font-size:13px; font-weight:500; line-height:1.35; }
+  .ex-name a { color:inherit; text-decoration:none; border-bottom:1px dashed rgba(255,255,255,0.15); padding-bottom:1px; transition:color 0.2s; }
+  .ex-name a:hover { color:var(--accent); }
+  .ex-detail { font-size:11px; color:var(--muted); margin-top:2px; line-height:1.4; font-style:italic; }
+  .sets-label { font-family:'Bebas Neue',sans-serif; font-size:17px; letter-spacing:0.04em; white-space:nowrap; flex-shrink:0; }
+  .c1 .sets-label { color:var(--d1); } .c2 .sets-label { color:var(--d2); } .c3 .sets-label { color:var(--d3); } .c4 .sets-label { color:var(--d4); }
+  .ex-row2 { display:flex; align-items:center; gap:8px; }
+  .weight-pill { display:inline-flex; align-items:stretch; border:1px solid #2a2a2a; border-radius:7px; overflow:hidden; background:rgba(255,255,255,0.04); flex-shrink:0; }
+  .weight-input { width:44px; background:transparent; border:none; color:var(--text); font-family:'DM Sans',sans-serif; font-size:13px; padding:5px 6px; text-align:center; outline:none; -moz-appearance:textfield; }
+  .weight-input::-webkit-outer-spin-button, .weight-input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .weight-input::placeholder { color:#383838; }
+  .weight-input:disabled { opacity:0.2; }
+  .ex-unit-sel { display:inline-flex; border-left:1px solid #2a2a2a; flex-shrink:0; }
+  .ex-unit-btn { font-family:'DM Sans',sans-serif; font-size:9px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; padding:0 7px; background:transparent; border:none; color:#444; cursor:pointer; transition:all 0.12s; }
+  .ex-unit-btn.active { background:rgba(255,255,255,0.07); color:#ccc; }
+  .ex-unit-btn + .ex-unit-btn { border-left:1px solid #2a2a2a; }
+  .ex-unit-btn:disabled { opacity:0.3; cursor:default; }
+  .set-checks { display:flex; gap:5px; flex-wrap:wrap; margin-left:auto; }
+  .set-dot { width:26px; height:26px; border-radius:50%; border:1.5px solid #404040; background:rgba(255,255,255,0.06); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s ease; flex-shrink:0; }
+  .set-dot svg { width:11px; height:11px; stroke:#606060; stroke-width:2.5; fill:none; transition:all 0.15s; }
+  .set-dot:active { transform:scale(0.88); }
+  .set-dot[data-idx="0"].done { background:#ff5500; border-color:#ff5500; box-shadow:0 0 8px rgba(255,85,0,0.65); }
+  .set-dot[data-idx="0"].done svg { stroke:#fff; }
+  .set-dot[data-idx="1"].done { background:#f5c400; border-color:#f5c400; box-shadow:0 0 8px rgba(245,196,0,0.65); }
+  .set-dot[data-idx="1"].done svg { stroke:#000; }
+  .set-dot[data-idx="2"].done { background:#00bfff; border-color:#00bfff; box-shadow:0 0 8px rgba(0,191,255,0.65); }
+  .set-dot[data-idx="2"].done svg { stroke:#000; }
+  .set-dot[data-idx="3"].done { background:#bf5fff; border-color:#bf5fff; box-shadow:0 0 8px rgba(191,95,255,0.65); }
+  .set-dot[data-idx="3"].done svg { stroke:#fff; }
+  .knee { display:inline-block; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; padding:2px 6px; border-radius:10px; background:rgba(56,189,248,0.1); color:#38bdf8; margin-left:5px; vertical-align:middle; }
 
-  /* Exercise row: name+detail | sets | weight | check */
-  .ex {
-    display:grid;
-    grid-template-columns: 1fr auto auto auto;
-    align-items:center;
-    gap:10px;
-  }
-  .ex-info { min-width:0; }
-  .ex-name { font-size:14px; font-weight:500; line-height:1.3; }
-  .ex-name a { color:inherit; text-decoration:none; border-bottom:1px dashed rgba(255,255,255,0.18); padding-bottom:1px; transition:color 0.2s, border-color 0.2s; }
-  .ex-name a:hover { color:var(--accent); border-color:var(--accent); }
-  .ex-detail { font-size:11px; color:var(--muted); margin-top:3px; line-height:1.4; font-style:italic; }
+  /* FLOATING TIMER */
+  #timer-bar { position:fixed; bottom:0; left:0; right:0; height:68px; background:#0d0d0d; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 20px; z-index:999; transition:border-color 0.3s; }
+  #timer-bar.active { border-top-color:var(--timer-color, var(--accent)); }
+  #timer-progress-line { position:absolute; top:0; left:0; height:2px; background:var(--timer-color, var(--accent)); width:100%; transform-origin:left; transform:scaleX(0); transition:transform linear, background 0.3s; }
+  .timer-left { display:flex; align-items:center; gap:12px; }
+  #timer-ring-wrap { position:relative; width:42px; height:42px; flex-shrink:0; }
+  #timer-ring-wrap svg { position:absolute; top:0; left:0; transform:rotate(-90deg); }
+  #timer-ring-bg { fill:none; stroke:var(--border); stroke-width:3; }
+  #timer-ring-progress { fill:none; stroke:var(--timer-color, var(--accent)); stroke-width:3; stroke-linecap:round; transition:stroke-dashoffset 1s linear, stroke 0.3s; }
+  #timer-ring-label { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Bebas Neue',sans-serif; font-size:12px; color:var(--timer-color, var(--muted)); }
+  #timer-label { font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); }
+  #timer-display { font-family:'Bebas Neue',sans-serif; font-size:40px; letter-spacing:0.02em; color:var(--timer-color, var(--muted)); line-height:1; min-width:76px; }
+  #timer-display.urgent { color:#ff4d4d !important; }
+  .timer-right { display:flex; gap:8px; align-items:center; }
+  #timer-skip { background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--muted); font-family:'DM Sans',sans-serif; font-size:12px; padding:6px 13px; border-radius:8px; cursor:pointer; }
+  #timer-skip:hover { background:rgba(255,255,255,0.1); color:var(--text); }
+  #timer-reset { background:transparent; border:none; color:var(--muted); font-size:18px; cursor:pointer; padding:6px; line-height:1; }
 
-  .sets { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:0.04em; white-space:nowrap; text-align:right; }
-  .c1 .sets { color:var(--d1); } .c2 .sets { color:var(--d2); } .c3 .sets { color:var(--d3); } .c4 .sets { color:var(--d4); }
-
-  .weight-input {
-    width: 58px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    padding: 5px 7px;
-    text-align: center;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .weight-input::placeholder { color: var(--muted); font-size:11px; }
-  .weight-input:focus { border-color: rgba(255,255,255,0.25); }
-  .c1 .weight-input:focus { border-color: var(--d1); }
-  .c2 .weight-input:focus { border-color: var(--d2); }
-  .c3 .weight-input:focus { border-color: var(--d3); }
-  .c4 .weight-input:focus { border-color: var(--d4); }
-
-  /* Checkmark */
-  .check-btn {
-    width: 30px; height: 30px;
-    border-radius: 50%;
-    border: 1.5px solid var(--border);
-    background: transparent;
-    cursor: pointer;
-    display: flex; align-items:center; justify-content:center;
-    transition: all 0.18s ease;
-    flex-shrink: 0;
-  }
-  .check-btn svg { width:14px; height:14px; stroke: var(--muted); stroke-width:2.5; fill:none; transition: stroke 0.18s; }
-  .check-btn.done { border-color: var(--accent); background: rgba(200,241,53,0.12); }
-  .check-btn.done svg { stroke: var(--accent); }
-  .c2 .check-btn.done { border-color: var(--d2); background: rgba(255,107,53,0.12); }
-  .c2 .check-btn.done svg { stroke: var(--d2); }
-  .c3 .check-btn.done { border-color: var(--d3); background: rgba(56,189,248,0.12); }
-  .c3 .check-btn.done svg { stroke: var(--d3); }
-  .c4 .check-btn.done { border-color: var(--d4); background: rgba(167,139,250,0.12); }
-  .c4 .check-btn.done svg { stroke: var(--d4); }
-
-  .knee { display:inline-block; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; padding:2px 7px; border-radius:10px; background:rgba(56,189,248,0.1); color:#38bdf8; margin-left:6px; vertical-align:middle; font-style:normal; }
-  .ss-wrap { border-left:2px solid var(--border); padding-left:14px; margin-left:2px; }
-  .ss-label { font-size:10px; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:10px; }
-
-  .principles { margin:32px 24px 0; padding:24px; background:var(--surface); border:1px solid var(--border); border-radius:14px; }
-  .principles h3 { font-family:'Bebas Neue',sans-serif; font-size:24px; letter-spacing:0.05em; margin-bottom:18px; }
-  .principles ul { list-style:none; display:flex; flex-direction:column; gap:11px; }
-  .principles li { font-size:13px; color:#999; line-height:1.55; padding-left:18px; position:relative; }
+  /* PRINCIPLES */
+  .principles { margin:24px 20px 0; padding:20px; background:var(--surface); border:1px solid var(--border); border-radius:14px; }
+  .principles h3 { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:0.05em; margin-bottom:14px; }
+  .principles ul { list-style:none; display:flex; flex-direction:column; gap:9px; }
+  .principles li { font-size:12px; color:#999; line-height:1.55; padding-left:16px; position:relative; }
   .principles li::before { content:'→'; position:absolute; left:0; color:var(--accent); }
   .principles li strong { color:var(--text); }
 </style>
 </head>
 <body>
 
-<script>
-  function toggle(btn) {
-    btn.classList.toggle('done');
-  }
-</script>
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="label" style="margin-bottom:16px">Fitness · Miguel</div>
+  <h2>MASA +<br><em>RODILLAS</em></h2>
+  <p>Inicia sesión para guardar tu progreso<br>y ver tu evolución semana a semana.</p>
+  <button id="google-btn" onclick="signInWithGoogle()">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
+    Continuar con Google
+  </button>
+  <div id="auth-error"></div>
+</div>
+
+<!-- USER BAR -->
+<div id="user-bar">
+  <div class="user-info">
+    <img id="user-avatar" src="" alt="">
+    <span id="user-name"></span>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <span id="save-status"><span class="save-dot" id="save-dot"></span><span id="save-text">—</span></span>
+    <button id="signout-btn" onclick="signOut()">Salir</button>
+  </div>
+</div>
+
+<!-- SESSION BAR -->
+<div id="session-bar">
+  <span>Sesión: <span id="session-date"></span></span>
+</div>
+
+<!-- PROGRESS PANEL -->
+<div id="progress-panel">
+  <div class="progress-header">
+    <span>Progresión de carga</span>
+    <button id="progress-toggle" onclick="toggleProgress()">▼</button>
+  </div>
+  <div id="progress-body"></div>
+</div>
 
 <header>
   <div class="label">Programa de entrenamiento · 4 días/semana</div>
@@ -144,504 +259,667 @@
     <span class="badge">Push / Pull / Legs</span>
     <span class="badge">60 min</span>
     <span class="badge">Rehab activa</span>
-    <span class="badge">4 días</span>
   </div>
   <div class="note">
-    <strong>Lógica del programa:</strong> Push/Pull separados = más volumen por grupo upper con mejor recuperación. 2 días de piernas con protocolo de rodilla integrado. El excéntrico lento es obligatorio en todos los ejercicios. <strong>Toca el nombre</strong> para ver el video. Registra el peso usado y marca el check al completar.
+    <strong>Lógica del programa:</strong> Push/Pull separados = más volumen por grupo upper. 2 días de piernas con protocolo de rodilla integrado. <strong>Toca el nombre</strong> para ver el video. Marca cada set — el timer inicia automáticamente.
   </div>
 </header>
+
+<div class="global-unit-bar">
+  <span class="global-unit-label">Unidad de peso</span>
+  <div class="unit-selector">
+    <button class="unit-btn" id="global-kg" onclick="setGlobalUnit('kg')">kg</button>
+    <button class="unit-btn active" id="global-lb" onclick="setGlobalUnit('lb')">lb</button>
+  </div>
+</div>
 
 <div class="week">
   <div class="week-day c1"><div class="wd-label">Lunes</div><div class="wd-name">Piernas<br>Quad</div></div>
   <div class="week-day c2"><div class="wd-label">Miércoles</div><div class="wd-name">Upper<br>Push</div></div>
-  <div class="week-day c3"><div class="wd-label">Viernes</div><div class="wd-name">Piernas<br>Posterior</div></div>
+  <div class="week-day c3"><div class="wd-label">Viernes</div><div class="wd-name">Piernas<br>Post.</div></div>
   <div class="week-day c4"><div class="wd-label">Sábado</div><div class="wd-name">Upper<br>Pull</div></div>
 </div>
 
 <div class="days">
 
-  <!-- DÍA 1 -->
-  <div class="card c1">
-    <div class="card-header">
-      <div>
-        <div class="day-tag">Día 1 · Lunes</div>
-        <div class="card-title">Piernas — Quad Dominante</div>
-        <div class="card-sub">+ Protocolo rodilla integrado</div>
+<!-- DÍA 1 -->
+<div class="card c1" data-day="1">
+  <div class="card-header">
+    <div><div class="day-tag">Día 1 · Lunes</div><div class="card-title">Piernas — Quad Dominante</div><div class="card-sub">+ Protocolo rodilla integrado</div></div>
+    <div class="big-num">1</div>
+  </div>
+  <div class="timing">
+    <div class="t-block"><span class="t-val">10'</span><span class="t-lbl">Rehab</span></div>
+    <div class="t-block"><span class="t-val">45'</span><span class="t-lbl">Trabajo</span></div>
+    <div class="t-block"><span class="t-val">5'</span><span class="t-lbl">Movilidad</span></div>
+  </div>
+  <div class="phase">
+    <div class="phase-label">Protocolo rodilla · 10 min — No saltar</div>
+    <div class="exlist">
+      <div class="ex" data-exid="iso-quad-pared">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=wall+sit+isometric+quad+knee+rehab+how+to" target="_blank">Isométrico de cuádriceps en pared</a><span class="knee">rodilla</span></div><div class="ex-detail">45° de flexión · mantener sin temblar · sin dolor agudo</div></div><span class="sets-label">3×45s</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="60" data-sets="3"></div></div>
       </div>
-      <div class="big-num">1</div>
-    </div>
-    <div class="timing">
-      <div class="t-block"><span class="t-val">10'</span><span class="t-lbl">Rehab</span></div>
-      <div class="t-block"><span class="t-val">45'</span><span class="t-lbl">Trabajo</span></div>
-      <div class="t-block"><span class="t-val">5'</span><span class="t-lbl">Movilidad</span></div>
-    </div>
-
-    <div class="phase">
-      <div class="phase-label">Protocolo rodilla · 10 min — No saltar</div>
-      <div class="exlist">
-        <div class="ex">
-          <div class="ex-info">
-            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=wall+sit+isometric+quad+knee+rehab+how+to" target="_blank">Isométrico de cuádriceps en pared</a> <span class="knee">rodilla</span></div>
-            <div class="ex-detail">45° de flexión · mantener sin temblar · sin dolor agudo</div>
-          </div>
-          <div class="sets">3×45s</div>
-          <input class="weight-input" type="text" placeholder="kg / lb">
-          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-        </div>
-        <div class="ex">
-          <div class="ex-info">
-            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=eccentric+step+down+exercise+knee+rehab+how+to" target="_blank">Step-down excéntrico en cajón</a> <span class="knee">rodilla</span></div>
-            <div class="ex-detail">Descenso en 4 seg · control total · 5–10 cm de altura</div>
-          </div>
-          <div class="sets">2×10</div>
-          <input class="weight-input" type="text" placeholder="kg / lb">
-          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-        </div>
-      </div>
-    </div>
-
-    <div class="phase">
-      <div class="phase-label">Bloque A — Fuerza base · 22 min</div>
-      <div class="exlist">
-        <div class="ex">
-          <div class="ex-info">
-            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=goblet+squat+pause+how+to+form" target="_blank">Sentadilla goblet con pausa</a></div>
-            <div class="ex-detail">Pausa 2 seg abajo · 2 series de activación, luego trabajo</div>
-          </div>
-          <div class="sets">4×8</div>
-          <input class="weight-input" type="text" placeholder="kg / lb">
-          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-        </div>
-        <div class="ex">
-          <div class="ex-info">
-            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=leg+press+45+high+foot+placement+form+how+to" target="_blank">Prensa 45° — rango controlado</a> <span class="knee">rodilla</span></div>
-            <div class="ex-detail">Pies altos y anchos · rodilla nunca pasa 90° · excéntrico 3 seg</div>
-          </div>
-          <div class="sets">4×10</div>
-          <input class="weight-input" type="text" placeholder="kg / lb">
-          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-        </div>
-      </div>
-    </div>
-
-    <div class="phase">
-      <div class="phase-label">Bloque B — Volumen · 18 min</div>
-      <div class="ss-wrap">
-        <div class="ss-label">Superset × 3 rondas · descanso 90s</div>
-        <div class="exlist">
-          <div class="ex">
-            <div class="ex-info">
-              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=leg+extension+machine+short+range+quad+how+to" target="_blank">Extensión de cuádriceps (rango corto)</a> <span class="knee">rodilla</span></div>
-              <div class="ex-detail">Solo 0–60° · nunca extensión completa · carga moderada</div>
-            </div>
-            <div class="sets">3×12</div>
-            <input class="weight-input" type="text" placeholder="kg / lb">
-            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-          </div>
-          <div class="ex">
-            <div class="ex-info">
-              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=reverse+lunge+dumbbell+how+to+form" target="_blank">Zancada reversa con mancuernas</a></div>
-              <div class="ex-detail">Paso largo atrás · menos torque patelar que zancada forward</div>
-            </div>
-            <div class="sets">3×10/l</div>
-            <input class="weight-input" type="text" placeholder="kg / lb">
-            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="phase">
-      <div class="phase-label">Movilidad final · 5 min</div>
-      <div class="exlist">
-        <div class="ex">
-          <div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=kneeling+hip+flexor+stretch+how+to" target="_blank">Estiramiento flexores de cadera en lunge</a></div></div>
-          <div class="sets">2×40s</div>
-          <input class="weight-input" type="text" placeholder="—" disabled style="opacity:0.3">
-          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-        </div>
-        <div class="ex">
-          <div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=ankle+mobility+wall+drill+dorsiflexion+how+to" target="_blank">Movilidad de tobillo en pared</a></div></div>
-          <div class="sets">2×30s</div>
-          <input class="weight-input" type="text" placeholder="—" disabled style="opacity:0.3">
-          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-        </div>
+      <div class="ex" data-exid="step-down-excentrico">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=eccentric+step+down+exercise+knee+rehab+how+to" target="_blank">Step-down excéntrico en cajón</a><span class="knee">rodilla</span></div><div class="ex-detail">Descenso en 4 seg · control total · 5–10 cm de altura</div></div><span class="sets-label">2×10</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="60" data-sets="2"></div></div>
       </div>
     </div>
   </div>
-
-  <!-- DÍA 2 -->
-  <div class="card c2">
-    <div class="card-header">
-      <div>
-        <div class="day-tag">Día 2 · Miércoles</div>
-        <div class="card-title">Upper — Push</div>
-        <div class="card-sub">Pecho · Hombros · Tríceps</div>
+  <div class="phase">
+    <div class="phase-label">Bloque A — Fuerza base · 22 min</div>
+    <div class="exlist">
+      <div class="ex" data-exid="sentadilla-goblet">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=goblet+squat+pause+how+to+form" target="_blank">Sentadilla goblet con pausa</a></div><div class="ex-detail">Pausa 2 seg abajo · 2 series de activación, luego trabajo</div></div><span class="sets-label">4×8</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="90" data-sets="4"></div></div>
       </div>
-      <div class="big-num">2</div>
-    </div>
-    <div class="timing">
-      <div class="t-block"><span class="t-val">5'</span><span class="t-lbl">Activación</span></div>
-      <div class="t-block"><span class="t-val">50'</span><span class="t-lbl">Trabajo</span></div>
-      <div class="t-block"><span class="t-val">5'</span><span class="t-lbl">Movilidad</span></div>
-    </div>
-
-    <div class="phase">
-      <div class="phase-label">Bloque A — Pecho · 20 min</div>
-      <div class="ss-wrap">
-        <div class="ss-label">Superset × 4 rondas · descanso 90s</div>
-        <div class="exlist">
-          <div class="ex">
-            <div class="ex-info">
-              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=incline+barbell+bench+press+proper+form+how+to" target="_blank">Press de banca inclinado con barra</a></div>
-              <div class="ex-detail">Inclinación 30–45° · escápulas retraídas · excéntrico 3 seg</div>
-            </div>
-            <div class="sets">4×8</div>
-            <input class="weight-input" type="text" placeholder="kg / lb">
-            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-          </div>
-          <div class="ex">
-            <div class="ex-info">
-              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=dumbbell+chest+fly+flat+bench+how+to+form" target="_blank">Aperturas con mancuernas en banco plano</a></div>
-              <div class="ex-detail">Arco suave en codos · estiramiento completo abajo</div>
-            </div>
-            <div class="sets">4×12</div>
-            <input class="weight-input" type="text" placeholder="kg / lb">
-            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="phase">
-      <div class="phase-label">Bloque B — Hombros · 20 min</div>
-      <div class="ss-wrap">
-        <div class="ss-label">Superset × 3 rondas · descanso 90s</div>
-        <div class="exlist">
-          <div class="ex">
-            <div class="ex-info">
-              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=seated+dumbbell+shoulder+press+how+to+form" target="_blank">Press militar con mancuernas sentado</a></div>
-              <div class="ex-detail">Codos ligeramente adelantados · sin hiperextender lumbar</div>
-            </div>
-            <div class="sets">3×10</div>
-            <input class="weight-input" type="text" placeholder="kg / lb">
-            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-          </div>
-          <div class="ex">
-            <div class="ex-info">
-              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=dumbbell+lateral+raise+side+delts+how+to+form" target="_blank">Elevaciones laterales con mancuernas</a></div>
-              <div class="ex-detail">Codo ligeramente doblado · no subir más del hombro</div>
-            </div>
-            <div class="sets">3×15</div>
-            <input class="weight-input" type="text" placeholder="kg / lb">
-            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="phase">
-      <div class="phase-label">Bloque C — Tríceps · 10 min</div>
-      <div class="ss-wrap">
-        <div class="ss-label">Superset × 3 rondas · descanso 60s</div>
-        <div class="exlist">
-          <div class="ex">
-            <div class="ex-info">
-              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=tricep+rope+pushdown+cable+how+to+form" target="_blank">Extensión de tríceps en polea (rope)</a></div>
-              <div class="ex-detail">Codos pegados al cuerpo · extensión completa abajo</div>
-            </div>
-            <div class="sets">3×12</div>
-            <input class="weight-input" type="text" placeholder="kg / lb">
-            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-          </div>
-          <div class="ex">
-            <div class="ex-info">
-              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=bench+dips+triceps+how+to+form" target="_blank">Fondos en banco (Dips en banco)</a></div>
-              <div class="ex-detail">Cuerpo pegado al banco · no bajar más de 90°</div>
-            </div>
-            <div class="sets">3×12</div>
-            <input class="weight-input" type="text" placeholder="kg / lb">
-            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="phase">
-      <div class="phase-label">Movilidad final · 5 min</div>
-      <div class="exlist">
-        <div class="ex">
-          <div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=chest+doorway+stretch+pectoral+how+to" target="_blank">Estiramiento de pectoral en marco de puerta</a></div></div>
-          <div class="sets">2×40s</div>
-          <input class="weight-input" type="text" placeholder="—" disabled style="opacity:0.3">
-          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-        </div>
-        <div class="ex">
-          <div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=thoracic+spine+rotation+floor+mobility+how+to" target="_blank">Rotación torácica en el suelo</a></div></div>
-          <div class="sets">2×30s</div>
-          <input class="weight-input" type="text" placeholder="—" disabled style="opacity:0.3">
-          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-        </div>
+      <div class="ex" data-exid="prensa-45">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=leg+press+45+high+foot+placement+form+how+to" target="_blank">Prensa 45° — rango controlado</a><span class="knee">rodilla</span></div><div class="ex-detail">Pies altos y anchos · rodilla nunca pasa 90° · excéntrico 3 seg</div></div><span class="sets-label">4×10</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="90" data-sets="4"></div></div>
       </div>
     </div>
   </div>
-
-  <!-- DÍA 3 -->
-  <div class="card c3">
-    <div class="card-header">
-      <div>
-        <div class="day-tag">Día 3 · Viernes</div>
-        <div class="card-title">Piernas — Posterior Dominante</div>
-        <div class="card-sub">+ Protocolo rodilla integrado</div>
+  <div class="phase">
+    <div class="phase-label">Bloque B — Volumen · 18 min</div>
+    <div class="ss-wrap"><div class="ss-label">Superset × 3 rondas · descanso 90s</div>
+    <div class="exlist">
+      <div class="ex" data-exid="extension-cuadriceps">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=leg+extension+machine+short+range+quad+how+to" target="_blank">Extensión de cuádriceps (rango corto)</a><span class="knee">rodilla</span></div><div class="ex-detail">Solo 0–60° · nunca extensión completa · carga moderada</div></div><span class="sets-label">3×12</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="90" data-sets="3"></div></div>
       </div>
-      <div class="big-num">3</div>
-    </div>
-    <div class="timing">
-      <div class="t-block"><span class="t-val">10'</span><span class="t-lbl">Rehab</span></div>
-      <div class="t-block"><span class="t-val">45'</span><span class="t-lbl">Trabajo</span></div>
-      <div class="t-block"><span class="t-val">5'</span><span class="t-lbl">Movilidad</span></div>
-    </div>
-
-    <div class="phase">
-      <div class="phase-label">Protocolo rodilla · 10 min — No saltar</div>
-      <div class="exlist">
-        <div class="ex">
-          <div class="ex-info">
-            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=wall+sit+isometric+quad+knee+rehab+how+to" target="_blank">Isométrico de cuádriceps en pared</a> <span class="knee">rodilla</span></div>
-            <div class="ex-detail">Aumentar ángulo semana a semana · nunca con dolor</div>
-          </div>
-          <div class="sets">3×60s</div>
-          <input class="weight-input" type="text" placeholder="—" disabled style="opacity:0.3">
-          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-        </div>
-        <div class="ex">
-          <div class="ex-info">
-            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=eccentric+step+up+single+leg+slow+lowering+knee+how+to" target="_blank">Step-up excéntrico en cajón</a> <span class="knee">rodilla</span></div>
-            <div class="ex-detail">Subir con dos piernas · bajar lento 4 seg con una sola</div>
-          </div>
-          <div class="sets">2×8/l</div>
-          <input class="weight-input" type="text" placeholder="kg / lb">
-          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-        </div>
+      <div class="ex" data-exid="zancada-reversa">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=reverse+lunge+dumbbell+how+to+form" target="_blank">Zancada reversa con mancuernas</a></div><div class="ex-detail">Paso largo atrás · menos torque patelar que zancada forward</div></div><span class="sets-label">3×10/l</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="90" data-sets="3"></div></div>
       </div>
-    </div>
-
-    <div class="phase">
-      <div class="phase-label">Bloque A — Hip hinge fuerza · 25 min</div>
-      <div class="exlist">
-        <div class="ex">
-          <div class="ex-info">
-            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=romanian+deadlift+RDL+proper+form+how+to" target="_blank">Peso muerto rumano (RDL)</a></div>
-            <div class="ex-detail">Isquiotibiales al máximo · rodilla suave · espalda neutra</div>
-          </div>
-          <div class="sets">4×8</div>
-          <input class="weight-input" type="text" placeholder="kg / lb">
-          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-        </div>
-        <div class="ex">
-          <div class="ex-info">
-            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=barbell+hip+thrust+bench+proper+form+how+to" target="_blank">Hip thrust con barra en banco</a></div>
-            <div class="ex-detail">Pausa 2 seg arriba · glúteo contraído · sin hiperextensión lumbar</div>
-          </div>
-          <div class="sets">4×10</div>
-          <input class="weight-input" type="text" placeholder="kg / lb">
-          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-        </div>
+    </div></div>
+  </div>
+  <div class="phase">
+    <div class="phase-label">Movilidad final · 5 min</div>
+    <div class="exlist">
+      <div class="ex" data-exid="estiramiento-hip-flexor">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=kneeling+hip+flexor+stretch+how+to" target="_blank">Estiramiento flexores de cadera en lunge</a></div></div><span class="sets-label">2×40s</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" placeholder="—" disabled><div class="ex-unit-sel"><button class="ex-unit-btn" disabled>kg</button><button class="ex-unit-btn" disabled>lb</button></div></div><div class="set-checks" data-rest="45" data-sets="2"></div></div>
       </div>
-    </div>
-
-    <div class="phase">
-      <div class="phase-label">Bloque B — Volumen posterior + estabilidad · 18 min</div>
-      <div class="ss-wrap">
-        <div class="ss-label">Superset × 3 rondas · descanso 90s</div>
-        <div class="exlist">
-          <div class="ex">
-            <div class="ex-info">
-              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=lying+hamstring+curl+machine+eccentric+how+to+form" target="_blank">Curl de isquiotibiales en máquina</a></div>
-              <div class="ex-detail">Excéntrico 3 seg · protege rodilla · rango completo</div>
-            </div>
-            <div class="sets">3×12</div>
-            <input class="weight-input" type="text" placeholder="kg / lb">
-            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-          </div>
-          <div class="ex">
-            <div class="ex-info">
-              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=bulgarian+split+squat+dumbbell+proper+form+how+to" target="_blank">Sentadilla búlgara con mancuernas</a> <span class="knee">rodilla</span></div>
-              <div class="ex-detail">Pie trasero elevado · solo el rango sin dolor · alt: prensa unilateral</div>
-            </div>
-            <div class="sets">3×8/l</div>
-            <input class="weight-input" type="text" placeholder="kg / lb">
-            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="phase">
-      <div class="phase-label">Movilidad final · 5 min</div>
-      <div class="exlist">
-        <div class="ex">
-          <div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=lying+hamstring+stretch+resistance+band+how+to" target="_blank">Estiramiento de isquiotibiales con banda</a></div></div>
-          <div class="sets">2×40s</div>
-          <input class="weight-input" type="text" placeholder="—" disabled style="opacity:0.3">
-          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-        </div>
-        <div class="ex">
-          <div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=foam+roller+quadriceps+IT+band+how+to+technique" target="_blank">Foam roll cuádriceps e IT band</a></div></div>
-          <div class="sets">90s/l</div>
-          <input class="weight-input" type="text" placeholder="—" disabled style="opacity:0.3">
-          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-        </div>
+      <div class="ex" data-exid="movilidad-tobillo">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=ankle+mobility+wall+drill+dorsiflexion+how+to" target="_blank">Movilidad de tobillo en pared</a></div></div><span class="sets-label">2×30s</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" placeholder="—" disabled><div class="ex-unit-sel"><button class="ex-unit-btn" disabled>kg</button><button class="ex-unit-btn" disabled>lb</button></div></div><div class="set-checks" data-rest="45" data-sets="2"></div></div>
       </div>
     </div>
   </div>
-
-  <!-- DÍA 4 -->
-  <div class="card c4">
-    <div class="card-header">
-      <div>
-        <div class="day-tag">Día 4 · Sábado</div>
-        <div class="card-title">Upper — Pull + Core</div>
-        <div class="card-sub">Espalda · Bíceps · Core</div>
-      </div>
-      <div class="big-num">4</div>
-    </div>
-    <div class="timing">
-      <div class="t-block"><span class="t-val">5'</span><span class="t-lbl">Activación</span></div>
-      <div class="t-block"><span class="t-val">45'</span><span class="t-lbl">Trabajo</span></div>
-      <div class="t-block"><span class="t-val">10'</span><span class="t-lbl">Core</span></div>
-    </div>
-
-    <div class="phase">
-      <div class="phase-label">Bloque A — Espalda vertical + horizontal · 25 min</div>
-      <div class="ss-wrap">
-        <div class="ss-label">Superset × 4 rondas · descanso 90s</div>
-        <div class="exlist">
-          <div class="ex">
-            <div class="ex-info">
-              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=wide+grip+lat+pulldown+cable+proper+form+how+to" target="_blank">Jalón al pecho en polea (agarre ancho)</a></div>
-              <div class="ex-detail">Pecho fuera · escápulas hacia abajo al final del movimiento</div>
-            </div>
-            <div class="sets">4×10</div>
-            <input class="weight-input" type="text" placeholder="kg / lb">
-            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-          </div>
-          <div class="ex">
-            <div class="ex-info">
-              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=one+arm+dumbbell+row+proper+form+how+to" target="_blank">Remo con mancuerna a una mano</a></div>
-              <div class="ex-detail">Codo pegado al cuerpo · pausa arriba 1 seg · no rotar el torso</div>
-            </div>
-            <div class="sets">4×10/l</div>
-            <input class="weight-input" type="text" placeholder="kg / lb">
-            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="phase">
-      <div class="phase-label">Bloque B — Espalda media + rear delt · 15 min</div>
-      <div class="ss-wrap">
-        <div class="ss-label">Superset × 3 rondas · descanso 90s</div>
-        <div class="exlist">
-          <div class="ex">
-            <div class="ex-info">
-              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=seated+cable+row+neutral+grip+proper+form+how+to" target="_blank">Remo en polea sentado (agarre neutro)</a></div>
-              <div class="ex-detail">Tira hacia ombligo · pecho estático · no balancear</div>
-            </div>
-            <div class="sets">3×12</div>
-            <input class="weight-input" type="text" placeholder="kg / lb">
-            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-          </div>
-          <div class="ex">
-            <div class="ex-info">
-              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=face+pull+cable+rope+rear+delt+how+to+form" target="_blank">Face pull en polea alta con cuerda</a></div>
-              <div class="ex-detail">Tira hacia la cara · codos arriba · salud del manguito rotador</div>
-            </div>
-            <div class="sets">3×15</div>
-            <input class="weight-input" type="text" placeholder="kg / lb">
-            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="phase">
-      <div class="phase-label">Bloque C — Bíceps · 10 min</div>
-      <div class="ss-wrap">
-        <div class="ss-label">Superset × 3 rondas · descanso 60s</div>
-        <div class="exlist">
-          <div class="ex">
-            <div class="ex-info">
-              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=EZ+bar+curl+biceps+proper+form+how+to" target="_blank">Curl con barra EZ</a></div>
-              <div class="ex-detail">Codos fijos · excéntrico 3 seg · rango completo</div>
-            </div>
-            <div class="sets">3×10</div>
-            <input class="weight-input" type="text" placeholder="kg / lb">
-            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-          </div>
-          <div class="ex">
-            <div class="ex-info">
-              <div class="ex-name"><a href="https://www.youtube.com/results?search_query=hammer+curl+dumbbell+alternating+how+to+form" target="_blank">Curl martillo con mancuernas alterno</a></div>
-              <div class="ex-detail">Trabaja braquial y braquiorradial además del bíceps</div>
-            </div>
-            <div class="sets">3×12</div>
-            <input class="weight-input" type="text" placeholder="kg / lb">
-            <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="phase">
-      <div class="phase-label">Core · 10 min</div>
-      <div class="exlist">
-        <div class="ex">
-          <div class="ex-info">
-            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=plank+exercise+proper+form+how+to" target="_blank">Plancha frontal</a></div>
-            <div class="ex-detail">Cuerpo recto · no hundir caderas · respiración controlada</div>
-          </div>
-          <div class="sets">3×45s</div>
-          <input class="weight-input" type="text" placeholder="—" disabled style="opacity:0.3">
-          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-        </div>
-        <div class="ex">
-          <div class="ex-info">
-            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=dead+bug+exercise+core+stability+how+to+form" target="_blank">Dead bug</a></div>
-            <div class="ex-detail">Espalda baja pegada al suelo · movimiento lento y controlado</div>
-          </div>
-          <div class="sets">3×10/l</div>
-          <input class="weight-input" type="text" placeholder="—" disabled style="opacity:0.3">
-          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-        </div>
-        <div class="ex">
-          <div class="ex-info">
-            <div class="ex-name"><a href="https://www.youtube.com/results?search_query=pallof+press+cable+anti+rotation+core+how+to" target="_blank">Pallof press en polea</a></div>
-            <div class="ex-detail">Anti-rotación · core como estabilizador · no como motor</div>
-          </div>
-          <div class="sets">3×12/l</div>
-          <input class="weight-input" type="text" placeholder="kg / lb">
-          <button class="check-btn" onclick="toggle(this)"><svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg></button>
-        </div>
-      </div>
-    </div>
-  </div>
-
 </div>
+
+<!-- DÍA 2 -->
+<div class="card c2" data-day="2">
+  <div class="card-header">
+    <div><div class="day-tag">Día 2 · Miércoles</div><div class="card-title">Upper — Push</div><div class="card-sub">Pecho · Hombros · Tríceps</div></div>
+    <div class="big-num">2</div>
+  </div>
+  <div class="timing">
+    <div class="t-block"><span class="t-val">5'</span><span class="t-lbl">Activación</span></div>
+    <div class="t-block"><span class="t-val">50'</span><span class="t-lbl">Trabajo</span></div>
+    <div class="t-block"><span class="t-val">5'</span><span class="t-lbl">Movilidad</span></div>
+  </div>
+  <div class="phase">
+    <div class="phase-label">Bloque A — Pecho · 20 min</div>
+    <div class="ss-wrap"><div class="ss-label">Superset × 4 rondas · descanso 90s</div>
+    <div class="exlist">
+      <div class="ex" data-exid="press-banca-inclinado">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=incline+barbell+bench+press+proper+form+how+to" target="_blank">Press de banca inclinado con barra</a></div><div class="ex-detail">Inclinación 30–45° · escápulas retraídas · excéntrico 3 seg</div></div><span class="sets-label">4×8</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="90" data-sets="4"></div></div>
+      </div>
+      <div class="ex" data-exid="aperturas-mancuernas">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=dumbbell+chest+fly+flat+bench+how+to+form" target="_blank">Aperturas con mancuernas en banco plano</a></div><div class="ex-detail">Arco suave en codos · estiramiento completo abajo</div></div><span class="sets-label">4×12</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="90" data-sets="4"></div></div>
+      </div>
+    </div></div>
+  </div>
+  <div class="phase">
+    <div class="phase-label">Bloque B — Hombros · 20 min</div>
+    <div class="ss-wrap"><div class="ss-label">Superset × 3 rondas · descanso 90s</div>
+    <div class="exlist">
+      <div class="ex" data-exid="press-militar-mancuernas">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=seated+dumbbell+shoulder+press+how+to+form" target="_blank">Press militar con mancuernas sentado</a></div><div class="ex-detail">Codos ligeramente adelantados · sin hiperextender lumbar</div></div><span class="sets-label">3×10</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="90" data-sets="3"></div></div>
+      </div>
+      <div class="ex" data-exid="elevaciones-laterales">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=dumbbell+lateral+raise+side+delts+how+to+form" target="_blank">Elevaciones laterales con mancuernas</a></div><div class="ex-detail">Codo ligeramente doblado · no subir más del hombro</div></div><span class="sets-label">3×15</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="90" data-sets="3"></div></div>
+      </div>
+    </div></div>
+  </div>
+  <div class="phase">
+    <div class="phase-label">Bloque C — Tríceps · 10 min</div>
+    <div class="ss-wrap"><div class="ss-label">Superset × 3 rondas · descanso 60s</div>
+    <div class="exlist">
+      <div class="ex" data-exid="extension-triceps-polea">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=tricep+rope+pushdown+cable+how+to+form" target="_blank">Extensión de tríceps en polea (rope)</a></div><div class="ex-detail">Codos pegados al cuerpo · extensión completa abajo</div></div><span class="sets-label">3×12</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="60" data-sets="3"></div></div>
+      </div>
+      <div class="ex" data-exid="fondos-banco">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=bench+dips+triceps+how+to+form" target="_blank">Fondos en banco (Dips en banco)</a></div><div class="ex-detail">Cuerpo pegado al banco · no bajar más de 90°</div></div><span class="sets-label">3×12</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="60" data-sets="3"></div></div>
+      </div>
+    </div></div>
+  </div>
+  <div class="phase">
+    <div class="phase-label">Movilidad final · 5 min</div>
+    <div class="exlist">
+      <div class="ex" data-exid="estiramiento-pectoral">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=chest+doorway+stretch+pectoral+how+to" target="_blank">Estiramiento de pectoral en marco de puerta</a></div></div><span class="sets-label">2×40s</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" placeholder="—" disabled><div class="ex-unit-sel"><button class="ex-unit-btn" disabled>kg</button><button class="ex-unit-btn" disabled>lb</button></div></div><div class="set-checks" data-rest="45" data-sets="2"></div></div>
+      </div>
+      <div class="ex" data-exid="rotacion-toracica">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=thoracic+spine+rotation+floor+mobility+how+to" target="_blank">Rotación torácica en el suelo</a></div></div><span class="sets-label">2×30s</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" placeholder="—" disabled><div class="ex-unit-sel"><button class="ex-unit-btn" disabled>kg</button><button class="ex-unit-btn" disabled>lb</button></div></div><div class="set-checks" data-rest="45" data-sets="2"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DÍA 3 -->
+<div class="card c3" data-day="3">
+  <div class="card-header">
+    <div><div class="day-tag">Día 3 · Viernes</div><div class="card-title">Piernas — Posterior Dominante</div><div class="card-sub">+ Protocolo rodilla integrado</div></div>
+    <div class="big-num">3</div>
+  </div>
+  <div class="timing">
+    <div class="t-block"><span class="t-val">10'</span><span class="t-lbl">Rehab</span></div>
+    <div class="t-block"><span class="t-val">45'</span><span class="t-lbl">Trabajo</span></div>
+    <div class="t-block"><span class="t-val">5'</span><span class="t-lbl">Movilidad</span></div>
+  </div>
+  <div class="phase">
+    <div class="phase-label">Protocolo rodilla · 10 min — No saltar</div>
+    <div class="exlist">
+      <div class="ex" data-exid="iso-quad-pared-d3">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=wall+sit+isometric+quad+knee+rehab+how+to" target="_blank">Isométrico de cuádriceps en pared</a><span class="knee">rodilla</span></div><div class="ex-detail">Aumentar ángulo semana a semana · nunca con dolor</div></div><span class="sets-label">3×60s</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" placeholder="—" disabled><div class="ex-unit-sel"><button class="ex-unit-btn" disabled>kg</button><button class="ex-unit-btn" disabled>lb</button></div></div><div class="set-checks" data-rest="60" data-sets="3"></div></div>
+      </div>
+      <div class="ex" data-exid="step-up-excentrico">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=eccentric+step+up+single+leg+slow+lowering+knee+how+to" target="_blank">Step-up excéntrico en cajón</a><span class="knee">rodilla</span></div><div class="ex-detail">Subir con dos piernas · bajar lento 4 seg con una sola</div></div><span class="sets-label">2×8/l</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="60" data-sets="2"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="phase">
+    <div class="phase-label">Bloque A — Hip hinge fuerza · 25 min</div>
+    <div class="exlist">
+      <div class="ex" data-exid="rdl">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=romanian+deadlift+RDL+proper+form+how+to" target="_blank">Peso muerto rumano (RDL)</a></div><div class="ex-detail">Isquiotibiales al máximo · rodilla suave · espalda neutra</div></div><span class="sets-label">4×8</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="90" data-sets="4"></div></div>
+      </div>
+      <div class="ex" data-exid="hip-thrust">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=barbell+hip+thrust+bench+proper+form+how+to" target="_blank">Hip thrust con barra en banco</a></div><div class="ex-detail">Pausa 2 seg arriba · glúteo contraído · sin hiperextensión lumbar</div></div><span class="sets-label">4×10</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="90" data-sets="4"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="phase">
+    <div class="phase-label">Bloque B — Volumen posterior + estabilidad · 18 min</div>
+    <div class="ss-wrap"><div class="ss-label">Superset × 3 rondas · descanso 90s</div>
+    <div class="exlist">
+      <div class="ex" data-exid="curl-isquiotibiales">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=lying+hamstring+curl+machine+eccentric+how+to+form" target="_blank">Curl de isquiotibiales en máquina</a></div><div class="ex-detail">Excéntrico 3 seg · protege rodilla · rango completo</div></div><span class="sets-label">3×12</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="90" data-sets="3"></div></div>
+      </div>
+      <div class="ex" data-exid="sentadilla-bulgara">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=bulgarian+split+squat+dumbbell+proper+form+how+to" target="_blank">Sentadilla búlgara con mancuernas</a><span class="knee">rodilla</span></div><div class="ex-detail">Pie trasero elevado · solo el rango sin dolor · alt: prensa unilateral</div></div><span class="sets-label">3×8/l</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="90" data-sets="3"></div></div>
+      </div>
+    </div></div>
+  </div>
+  <div class="phase">
+    <div class="phase-label">Movilidad final · 5 min</div>
+    <div class="exlist">
+      <div class="ex" data-exid="estiramiento-isquiotibiales">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=lying+hamstring+stretch+resistance+band+how+to" target="_blank">Estiramiento de isquiotibiales con banda</a></div></div><span class="sets-label">2×40s</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" placeholder="—" disabled><div class="ex-unit-sel"><button class="ex-unit-btn" disabled>kg</button><button class="ex-unit-btn" disabled>lb</button></div></div><div class="set-checks" data-rest="45" data-sets="2"></div></div>
+      </div>
+      <div class="ex" data-exid="foam-roll">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=foam+roller+quadriceps+IT+band+how+to+technique" target="_blank">Foam roll cuádriceps e IT band</a></div></div><span class="sets-label">90s/l</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" placeholder="—" disabled><div class="ex-unit-sel"><button class="ex-unit-btn" disabled>kg</button><button class="ex-unit-btn" disabled>lb</button></div></div><div class="set-checks" data-rest="45" data-sets="2"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DÍA 4 -->
+<div class="card c4" data-day="4">
+  <div class="card-header">
+    <div><div class="day-tag">Día 4 · Sábado</div><div class="card-title">Upper — Pull + Core</div><div class="card-sub">Espalda · Bíceps · Core</div></div>
+    <div class="big-num">4</div>
+  </div>
+  <div class="timing">
+    <div class="t-block"><span class="t-val">5'</span><span class="t-lbl">Activación</span></div>
+    <div class="t-block"><span class="t-val">45'</span><span class="t-lbl">Trabajo</span></div>
+    <div class="t-block"><span class="t-val">10'</span><span class="t-lbl">Core</span></div>
+  </div>
+  <div class="phase">
+    <div class="phase-label">Bloque A — Espalda vertical + horizontal · 25 min</div>
+    <div class="ss-wrap"><div class="ss-label">Superset × 4 rondas · descanso 90s</div>
+    <div class="exlist">
+      <div class="ex" data-exid="jalon-polea">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=wide+grip+lat+pulldown+cable+proper+form+how+to" target="_blank">Jalón al pecho en polea (agarre ancho)</a></div><div class="ex-detail">Pecho fuera · escápulas hacia abajo al final del movimiento</div></div><span class="sets-label">4×10</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="90" data-sets="4"></div></div>
+      </div>
+      <div class="ex" data-exid="remo-mancuerna">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=one+arm+dumbbell+row+proper+form+how+to" target="_blank">Remo con mancuerna a una mano</a></div><div class="ex-detail">Codo pegado al cuerpo · pausa arriba 1 seg · no rotar el torso</div></div><span class="sets-label">4×10/l</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="90" data-sets="4"></div></div>
+      </div>
+    </div></div>
+  </div>
+  <div class="phase">
+    <div class="phase-label">Bloque B — Espalda media + rear delt · 15 min</div>
+    <div class="ss-wrap"><div class="ss-label">Superset × 3 rondas · descanso 90s</div>
+    <div class="exlist">
+      <div class="ex" data-exid="remo-polea-sentado">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=seated+cable+row+neutral+grip+proper+form+how+to" target="_blank">Remo en polea sentado (agarre neutro)</a></div><div class="ex-detail">Tira hacia ombligo · pecho estático · no balancear</div></div><span class="sets-label">3×12</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="90" data-sets="3"></div></div>
+      </div>
+      <div class="ex" data-exid="face-pull">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=face+pull+cable+rope+rear+delt+how+to+form" target="_blank">Face pull en polea alta con cuerda</a></div><div class="ex-detail">Tira hacia la cara · codos arriba · salud del manguito rotador</div></div><span class="sets-label">3×15</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="90" data-sets="3"></div></div>
+      </div>
+    </div></div>
+  </div>
+  <div class="phase">
+    <div class="phase-label">Bloque C — Bíceps · 10 min</div>
+    <div class="ss-wrap"><div class="ss-label">Superset × 3 rondas · descanso 60s</div>
+    <div class="exlist">
+      <div class="ex" data-exid="curl-ez">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=EZ+bar+curl+biceps+proper+form+how+to" target="_blank">Curl con barra EZ</a></div><div class="ex-detail">Codos fijos · excéntrico 3 seg · rango completo</div></div><span class="sets-label">3×10</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="60" data-sets="3"></div></div>
+      </div>
+      <div class="ex" data-exid="curl-martillo">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=hammer+curl+dumbbell+alternating+how+to+form" target="_blank">Curl martillo con mancuernas alterno</a></div><div class="ex-detail">Trabaja braquial y braquiorradial además del bíceps</div></div><span class="sets-label">3×12</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="60" data-sets="3"></div></div>
+      </div>
+    </div></div>
+  </div>
+  <div class="phase">
+    <div class="phase-label">Core · 10 min</div>
+    <div class="exlist">
+      <div class="ex" data-exid="plancha">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=plank+exercise+proper+form+how+to" target="_blank">Plancha frontal</a></div><div class="ex-detail">Cuerpo recto · no hundir caderas · respiración controlada</div></div><span class="sets-label">3×45s</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" placeholder="—" disabled><div class="ex-unit-sel"><button class="ex-unit-btn" disabled>kg</button><button class="ex-unit-btn" disabled>lb</button></div></div><div class="set-checks" data-rest="45" data-sets="3"></div></div>
+      </div>
+      <div class="ex" data-exid="dead-bug">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=dead+bug+exercise+core+stability+how+to+form" target="_blank">Dead bug</a></div><div class="ex-detail">Espalda baja pegada al suelo · movimiento lento y controlado</div></div><span class="sets-label">3×10/l</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" placeholder="—" disabled><div class="ex-unit-sel"><button class="ex-unit-btn" disabled>kg</button><button class="ex-unit-btn" disabled>lb</button></div></div><div class="set-checks" data-rest="45" data-sets="3"></div></div>
+      </div>
+      <div class="ex" data-exid="pallof-press">
+        <div class="ex-row1"><div class="ex-info"><div class="ex-name"><a href="https://www.youtube.com/results?search_query=pallof+press+cable+anti+rotation+core+how+to" target="_blank">Pallof press en polea</a></div><div class="ex-detail">Anti-rotación · core como estabilizador · no como motor</div></div><span class="sets-label">3×12/l</span></div>
+        <div class="ex-row2"><div class="weight-pill"><input class="weight-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="0"><div class="ex-unit-sel"><button class="ex-unit-btn" onclick="toggleExUnit(this,'kg')">kg</button><button class="ex-unit-btn active" onclick="toggleExUnit(this,'lb')">lb</button></div></div><div class="set-checks" data-rest="60" data-sets="3"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end .days -->
 
 <div class="principles">
   <h3>Principios del programa</h3>
   <ul>
-    <li><strong>Excéntrico lento en todo:</strong> 3 seg en la bajada de cada ejercicio. La hipertrofia ocurre aquí. La rodilla se fortalece aquí.</li>
-    <li><strong>Isométricos de cuádriceps son terapéuticos:</strong> 4–6 semanas de consistencia reducen dolor patelar 40–50%. No son opcionales.</li>
-    <li><strong>Progresión del rango de rodilla:</strong> Semanas 1–2 rango corto. Semanas 3–4 ampliar solo si no hay dolor. Sin saltar fases.</li>
-    <li><strong>Sentadilla búlgara con precaución:</strong> Si genera dolor articular, sustituir por prensa unilateral. Sin negociación.</li>
+    <li><strong>Excéntrico lento en todo:</strong> 3 seg en la bajada. La hipertrofia ocurre aquí. La rodilla se fortalece aquí.</li>
+    <li><strong>Isométricos de cuádriceps son terapéuticos:</strong> 4–6 semanas reducen dolor patelar 40–50%. No son opcionales.</li>
+    <li><strong>Progresión del rango de rodilla:</strong> Semanas 1–2 rango corto. Semanas 3–4 ampliar solo si no hay dolor.</li>
+    <li><strong>Sentadilla búlgara con precaución:</strong> Si genera dolor articular, sustituir por prensa unilateral.</li>
     <li><strong>Face pull cada semana:</strong> Equilibra el volumen de push. Protege el manguito rotador a largo plazo.</li>
-    <li><strong>Proteína ≥ 2g/kg de peso corporal:</strong> Sin esto ningún programa funciona. No hay atajos.</li>
-    <li><strong>48h mínimo entre días de piernas:</strong> Lunes y Viernes garantizan eso. Nunca mover a días consecutivos.</li>
-    <li><strong>Dolor articular = stop inmediato:</strong> Molestia muscular es normal. Dolor en la articulación: para, reduce rango o carga.</li>
+    <li><strong>Proteína ≥ 2g/kg de peso corporal:</strong> Sin esto ningún programa funciona.</li>
+    <li><strong>48h mínimo entre días de piernas:</strong> Lunes y Viernes garantizan eso. Nunca consecutivos.</li>
+    <li><strong>Dolor articular = stop inmediato:</strong> Molestia muscular es normal. Dolor en articulación: para y reduce carga.</li>
   </ul>
 </div>
 
+<!-- FLOATING TIMER -->
+<div id="timer-bar">
+  <div id="timer-progress-line"></div>
+  <div class="timer-left">
+    <div id="timer-ring-wrap">
+      <svg width="42" height="42" viewBox="0 0 42 42">
+        <circle class="timer-ring-bg" cx="21" cy="21" r="17"/>
+        <circle id="timer-ring-progress" cx="21" cy="21" r="17" stroke-dasharray="107" stroke-dashoffset="107"/>
+      </svg>
+      <div id="timer-ring-label">—</div>
+    </div>
+    <div>
+      <div id="timer-label">DESCANSO</div>
+      <div id="timer-display">—</div>
+    </div>
+  </div>
+  <div class="timer-right">
+    <button id="timer-skip" onclick="skipTimer()">Saltar</button>
+    <button id="timer-reset" onclick="resetTimer()">↺</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// SUPABASE CONFIG — reemplaza con tus credenciales
+// ════════════════════════════════════════
+const SUPABASE_URL = 'https://zgguqppikebpkyvldmni.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnZ3VxcHBpa2VicGt5dmxkbW5pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MzkwNDIsImV4cCI6MjA5NTUxNTA0Mn0.-cQWJaQIIUMP_Zv0iej_ZdFC1ghEVOWZv4uPs-a2Ll0';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentUser = null;
+let currentSessionId = null;
+let saveTimer = null;
+
+// ── AUTH ──
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) await onSignedIn(session.user);
+  sb.auth.onAuthStateChange((_event, session) => {
+    if (session) onSignedIn(session.user);
+    else onSignedOut();
+  });
+}
+
+async function signInWithGoogle() {
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.href }
+  });
+  if (error) document.getElementById('auth-error').textContent = error.message;
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+}
+
+async function onSignedIn(user) {
+  currentUser = user;
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('user-bar').classList.add('visible');
+  document.getElementById('session-bar').classList.add('visible');
+  document.getElementById('user-name').textContent = user.user_metadata?.full_name || user.email;
+  const avatar = user.user_metadata?.avatar_url;
+  if (avatar) document.getElementById('user-avatar').src = avatar;
+  await ensureProfile(user);
+  await startSession();
+  await loadTodayData();
+  await loadProgressData();
+  document.getElementById('progress-panel').classList.add('visible');
+}
+
+function onSignedOut() {
+  currentUser = null;
+  currentSessionId = null;
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('user-bar').classList.remove('visible');
+  document.getElementById('session-bar').classList.remove('visible');
+  document.getElementById('progress-panel').classList.remove('visible');
+}
+
+// ── PROFILE ──
+async function ensureProfile(user) {
+  const { data } = await sb.from('profiles').select('id').eq('id', user.id).single();
+  if (!data) {
+    await sb.from('profiles').insert({
+      id: user.id,
+      name: user.user_metadata?.full_name || user.email,
+      avatar_url: user.user_metadata?.avatar_url || null
+    });
+  }
+}
+
+// ── SESSION ──
+async function startSession() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('session-date').textContent = today;
+  const { data } = await sb.from('workout_sessions')
+    .select('id')
+    .eq('user_id', currentUser.id)
+    .eq('date', today)
+    .single();
+  if (data) {
+    currentSessionId = data.id;
+  } else {
+    const { data: newSession } = await sb.from('workout_sessions')
+      .insert({ user_id: currentUser.id, date: today })
+      .select('id').single();
+    if (newSession) currentSessionId = newSession.id;
+  }
+}
+
+// ── LOAD TODAY ──
+async function loadTodayData() {
+  if (!currentSessionId) return;
+  const { data } = await sb.from('exercise_logs')
+    .select('*')
+    .eq('session_id', currentSessionId);
+  if (!data) return;
+  data.forEach(log => {
+    const exEl = document.querySelector(`[data-exid="${log.exercise_id}"]`);
+    if (!exEl) return;
+    const input = exEl.querySelector('.weight-input');
+    if (input && !input.disabled && log.weight) input.value = log.weight;
+    const unit = log.unit || 'lb';
+    const sel = exEl.querySelector('.ex-unit-sel');
+    if (sel) {
+      sel.querySelectorAll('.ex-unit-btn').forEach(b => b.classList.toggle('active', b.textContent === unit));
+    }
+    if (log.sets_done) {
+      const dots = exEl.querySelectorAll('.set-dot');
+      const done = JSON.parse(log.sets_done);
+      dots.forEach((dot, i) => { if (done[i]) dot.classList.add('done'); });
+    }
+  });
+}
+
+// ── SAVE LOG ──
+function scheduleSave(exEl) {
+  setSaveStatus('saving');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => saveExercise(exEl), 1200);
+}
+
+async function saveExercise(exEl) {
+  if (!currentUser || !currentSessionId) return;
+  const exId = exEl.dataset.exid;
+  const input = exEl.querySelector('.weight-input');
+  const weight = input && !input.disabled ? parseFloat(input.value) || null : null;
+  const sel = exEl.querySelector('.ex-unit-sel');
+  const activeUnit = sel ? (sel.querySelector('.ex-unit-btn.active')?.textContent || 'lb') : 'lb';
+  const dots = exEl.querySelectorAll('.set-dot');
+  const setsDone = JSON.stringify(Array.from(dots).map(d => d.classList.contains('done')));
+  const card = exEl.closest('.card');
+  const dayNum = card ? parseInt(card.dataset.day) : null;
+
+  const payload = {
+    session_id: currentSessionId,
+    user_id: currentUser.id,
+    exercise_id: exId,
+    day_number: dayNum,
+    weight,
+    unit: activeUnit,
+    sets_done: setsDone
+  };
+
+  const { data: existing } = await sb.from('exercise_logs')
+    .select('id')
+    .eq('session_id', currentSessionId)
+    .eq('exercise_id', exId)
+    .single();
+
+  let error;
+  if (existing) {
+    ({ error } = await sb.from('exercise_logs').update(payload).eq('id', existing.id));
+  } else {
+    ({ error } = await sb.from('exercise_logs').insert(payload));
+  }
+  setSaveStatus(error ? 'error' : 'saved');
+  if (!error) await loadProgressData();
+}
+
+function setSaveStatus(state) {
+  const dot = document.getElementById('save-dot');
+  const text = document.getElementById('save-text');
+  dot.className = 'save-dot ' + state;
+  text.textContent = state === 'saving' ? 'Guardando…' : state === 'saved' ? 'Guardado' : 'Error al guardar';
+}
+
+// ── PROGRESS ──
+async function loadProgressData() {
+  if (!currentUser) return;
+  const { data } = await sb.from('exercise_logs')
+    .select('exercise_id, weight, unit, workout_sessions(date)')
+    .eq('user_id', currentUser.id)
+    .not('weight', 'is', null)
+    .order('workout_sessions(date)', { ascending: true });
+  if (!data || !data.length) return;
+
+  const byEx = {};
+  data.forEach(row => {
+    const date = row.workout_sessions?.date;
+    if (!byEx[row.exercise_id]) byEx[row.exercise_id] = [];
+    byEx[row.exercise_id].push({ weight: row.weight, unit: row.unit, date });
+  });
+
+  const body = document.getElementById('progress-body');
+  body.innerHTML = '';
+  const maxEntries = 4;
+
+  Object.entries(byEx).forEach(([exId, entries]) => {
+    if (entries.length < 2) return;
+    const exEl = document.querySelector(`[data-exid="${exId}"]`);
+    const name = exEl?.querySelector('.ex-name a')?.textContent || exId;
+    const maxWeight = Math.max(...entries.map(e => e.weight));
+    const recent = entries.slice(-maxEntries);
+
+    const div = document.createElement('div');
+    div.className = 'prog-exercise';
+    div.innerHTML = `<div class="prog-ex-name">${name}</div><div class="prog-bars">${
+      recent.map(e => `<div class="prog-bar-row">
+        <span>${e.date?.slice(5)}</span>
+        <div class="prog-bar-wrap"><div class="prog-bar-fill" style="width:${Math.round((e.weight/maxWeight)*100)}%"></div></div>
+        <span class="prog-weight">${e.weight} ${e.unit}</span>
+      </div>`).join('')
+    }</div>`;
+    body.appendChild(div);
+  });
+
+  if (!body.innerHTML) body.innerHTML = '<p style="font-size:12px;color:var(--muted);padding:4px 0">Completa más sesiones para ver tu progresión.</p>';
+}
+
+function toggleProgress() {
+  const body = document.getElementById('progress-body');
+  const btn = document.getElementById('progress-toggle');
+  body.classList.toggle('open');
+  btn.textContent = body.classList.contains('open') ? '▲' : '▼';
+}
+
+// ── WEIGHT UNIT ──
+let globalUnit = 'lb';
+function setGlobalUnit(unit) {
+  globalUnit = unit;
+  document.getElementById('global-kg').classList.toggle('active', unit === 'kg');
+  document.getElementById('global-lb').classList.toggle('active', unit === 'lb');
+  document.querySelectorAll('.ex-unit-sel').forEach(sel => {
+    if (!sel.dataset.manual) {
+      sel.querySelectorAll('.ex-unit-btn').forEach(b => b.classList.toggle('active', b.textContent === unit));
+    }
+  });
+}
+
+function toggleExUnit(btn, unit) {
+  const sel = btn.closest('.ex-unit-sel');
+  sel.dataset.manual = '1';
+  sel.querySelectorAll('.ex-unit-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const exEl = btn.closest('.ex');
+  if (exEl) scheduleSave(exEl);
+}
+
+// ── SET DOTS ──
+const DOT_COLORS = ['#ff5500','#f5c400','#00bfff','#bf5fff'];
+document.querySelectorAll('.set-checks').forEach(container => {
+  const n = parseInt(container.dataset.sets) || 1;
+  const rest = parseInt(container.dataset.rest) || 90;
+  for (let i = 0; i < n; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'set-dot';
+    btn.dataset.idx = i;
+    btn.dataset.rest = rest;
+    btn.innerHTML = `<svg viewBox="0 0 16 16"><polyline points="2,8 6,12 14,4"/></svg>`;
+    btn.addEventListener('click', () => onSetDot(btn, i));
+    container.appendChild(btn);
+  }
+});
+
+// ── WEIGHT INPUT SAVE ──
+document.querySelectorAll('.weight-input:not([disabled])').forEach(input => {
+  input.addEventListener('change', () => {
+    const exEl = input.closest('.ex');
+    if (exEl) scheduleSave(exEl);
+  });
+});
+
+// ── TIMER ──
+let timerInterval = null, timerTotal = 0, timerLeft = 0;
+const CIRC = 2 * Math.PI * 17;
+const display = document.getElementById('timer-display');
+const label = document.getElementById('timer-label');
+const bar = document.getElementById('timer-bar');
+const ring = document.getElementById('timer-ring-progress');
+const ringLabel = document.getElementById('timer-ring-label');
+const progressLine = document.getElementById('timer-progress-line');
+
+function setTimerColor(c) { bar.style.setProperty('--timer-color', c); }
+
+function startTimer(seconds, color) {
+  clearInterval(timerInterval);
+  timerTotal = seconds; timerLeft = seconds;
+  setTimerColor(color); bar.classList.add('active');
+  updateTimerUI();
+  timerInterval = setInterval(() => {
+    timerLeft--;
+    if (timerLeft <= 0) { timerLeft = 0; updateTimerUI(); clearInterval(timerInterval); onTimerDone(); }
+    else updateTimerUI();
+  }, 1000);
+}
+
+function updateTimerUI() {
+  const m = Math.floor(timerLeft / 60), s = timerLeft % 60;
+  display.textContent = m > 0 ? `${m}:${s.toString().padStart(2,'0')}` : `${timerLeft}s`;
+  ringLabel.textContent = timerLeft > 0 ? timerLeft : '✓';
+  const pct = timerTotal > 0 ? timerLeft / timerTotal : 0;
+  ring.style.strokeDashoffset = CIRC * pct;
+  progressLine.style.transition = `transform ${timerLeft > 0 ? '1s' : '0s'} linear`;
+  progressLine.style.transform = `scaleX(${pct})`;
+  display.classList.toggle('urgent', timerLeft <= 10 && timerLeft > 0);
+}
+
+function onTimerDone() {
+  display.textContent = '¡Listo!'; ringLabel.textContent = '✓'; label.textContent = 'DESCANSASTE';
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  setTimeout(() => { if (timerLeft === 0) resetTimer(); }, 3000);
+}
+
+function skipTimer() { clearInterval(timerInterval); resetTimer(); }
+
+function resetTimer() {
+  clearInterval(timerInterval); timerLeft = 0; timerTotal = 0;
+  display.textContent = '—'; ringLabel.textContent = '—'; label.textContent = 'DESCANSO';
+  ring.style.strokeDashoffset = CIRC;
+  progressLine.style.transform = 'scaleX(0)';
+  bar.classList.remove('active'); display.classList.remove('urgent');
+  setTimerColor('var(--muted)');
+}
+
+function onSetDot(btn, idx) {
+  const wasDone = btn.classList.contains('done');
+  btn.classList.toggle('done');
+  if (!wasDone) {
+    const rest = parseInt(btn.dataset.rest) || 90;
+    const color = DOT_COLORS[idx % DOT_COLORS.length];
+    label.textContent = `SET ${idx + 1} COMPLETADO — DESCANSA`;
+    startTimer(rest, color);
+  }
+  const exEl = btn.closest('.ex');
+  if (exEl) scheduleSave(exEl);
+}
+
+init();
+</script>
 </body>
 </html>
